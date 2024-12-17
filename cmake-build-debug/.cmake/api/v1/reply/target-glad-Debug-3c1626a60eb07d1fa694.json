@@ -1,14 +1,9 @@
 {
+	"archive" : {},
 	"artifacts" : 
 	[
 		{
-			"path" : "libglad.dll"
-		},
-		{
-			"path" : "libglad.dll.a"
-		},
-		{
-			"path" : "libglad.pdb"
+			"path" : "libglad.a"
 		}
 	],
 	"backtrace" : 1,
@@ -51,17 +46,11 @@
 					"fragment" : "-g -fdiagnostics-color=always"
 				}
 			],
-			"defines" : 
-			[
-				{
-					"define" : "glad_EXPORTS"
-				}
-			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 2,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-3.3/include"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include"
 				}
 			],
 			"language" : "C",
@@ -72,23 +61,8 @@
 		}
 	],
 	"id" : "glad::@df5e3ce796715454c4bb",
-	"link" : 
-	{
-		"commandFragments" : 
-		[
-			{
-				"fragment" : "",
-				"role" : "flags"
-			},
-			{
-				"fragment" : "-lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32",
-				"role" : "libraries"
-			}
-		],
-		"language" : "C"
-	},
 	"name" : "glad",
-	"nameOnDisk" : "libglad.dll",
+	"nameOnDisk" : "libglad.a",
 	"paths" : 
 	{
 		"build" : "external/glad-3.3",
@@ -125,5 +99,5 @@
 			"sourceGroupIndex" : 1
 		}
 	],
-	"type" : "SHARED_LIBRARY"
+	"type" : "STATIC_LIBRARY"
 }

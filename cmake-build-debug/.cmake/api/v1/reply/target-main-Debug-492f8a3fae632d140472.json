@@ -59,27 +59,27 @@
 			[
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glfw-3.1.2/include"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/include"
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glm-0.9.7.1"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glm-0.9.7.1"
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-opengl-3.3/include"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-opengl-3.3/include"
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external"
 				},
 				{
 					"backtrace" : 3,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/finalProject3"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject3"
 				},
 				{
 					"backtrace" : 2,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-3.3/include"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include"
 				}
 			],
 			"language" : "CXX",
@@ -131,7 +131,7 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "libglad.dll.a",
+				"fragment" : "libglad.a",
 				"role" : "libraries"
 			},
 			{

@@ -49,11 +49,11 @@ rule C_COMPILER__glad_unscanned_Debug
 
 
 #############################################
-# Rule for linking C shared library.
+# Rule for linking C static library.
 
-rule C_SHARED_LIBRARY_LINKER__glad_Debug
-  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && C:\PROGRA~1\JETBRA~1\CLION2~1.2\bin\mingw\bin\gcc.exe $LANGUAGE_COMPILE_FLAGS $ARCH_FLAGS $LINK_FLAGS -shared -o $TARGET_FILE -Wl,--out-implib,$TARGET_IMPLIB -Wl,--major-image-version,0,--minor-image-version,0 $in $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
-  description = Linking C shared library $TARGET_FILE
+rule C_STATIC_LIBRARY_LINKER__glad_Debug
+  command = C:\Windows\system32\cmd.exe /C "$PRE_LINK && "C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -E rm -f $TARGET_FILE && C:\PROGRA~1\JETBRA~1\CLION2~1.2\bin\mingw\bin\ar.exe qc $TARGET_FILE $LINK_FLAGS $in && C:\PROGRA~1\JETBRA~1\CLION2~1.2\bin\mingw\bin\ranlib.exe $TARGET_FILE && $POST_BUILD"
+  description = Linking C static library $TARGET_FILE
   restat = $RESTAT
 
 
@@ -80,7 +80,7 @@ rule C_SHARED_LIBRARY_LINKER__glfw_Debug
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = "C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -S"C:\Users\thiba\OneDrive\Documents\ECOLE\Trinity\Computer Graphics\lab\finalProject3" -B"C:\Users\thiba\OneDrive\Documents\ECOLE\Trinity\Computer Graphics\lab\finalProject3\cmake-build-debug"
+  command = "C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" --regenerate-during-build -SC:\Users\thiba\OneDrive\Documents\ECOLE\Trinity\computergraphics -BC:\Users\thiba\OneDrive\Documents\ECOLE\Trinity\computergraphics\cmake-build-debug
   description = Re-running CMake...
   generator = 1
 
@@ -89,7 +89,7 @@ rule RERUN_CMAKE
 # Rule for cleaning all built files.
 
 rule CLEAN
-  command = C:\PROGRA~1\JETBRA~1\CLION2~1.2\bin\ninja\win\x64\ninja.exe $FILE_ARG -t clean $TARGETS
+  command = "C:\Program Files\JetBrains\CLion 2024.2.2\bin\ninja\win\x64\ninja.exe" $FILE_ARG -t clean $TARGETS
   description = Cleaning all built files...
 
 
@@ -97,6 +97,6 @@ rule CLEAN
 # Rule for printing all primary targets available.
 
 rule HELP
-  command = C:\PROGRA~1\JETBRA~1\CLION2~1.2\bin\ninja\win\x64\ninja.exe -t targets
+  command = "C:\Program Files\JetBrains\CLion 2024.2.2\bin\ninja\win\x64\ninja.exe" -t targets
   description = All primary targets available:
 

@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3
+# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/external/cmake_install.cmake")
+  include("C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/external/cmake_install.cmake")
 
 endif()
 
@@ -51,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

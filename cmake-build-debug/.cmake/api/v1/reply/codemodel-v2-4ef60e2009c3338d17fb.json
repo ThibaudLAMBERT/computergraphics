@@ -135,21 +135,21 @@
 				{
 					"directoryIndex" : 2,
 					"id" : "glad::@df5e3ce796715454c4bb",
-					"jsonFile" : "target-glad-Debug-2021c6b6dd8b5722e903.json",
+					"jsonFile" : "target-glad-Debug-3c1626a60eb07d1fa694.json",
 					"name" : "glad",
 					"projectIndex" : 1
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "glfw::@160694664b387c03da1c",
-					"jsonFile" : "target-glfw-Debug-8701cc9b5b84a3228b27.json",
+					"jsonFile" : "target-glfw-Debug-d0f027c7c093de71d040.json",
 					"name" : "glfw",
 					"projectIndex" : 2
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "main::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-main-Debug-0bf4c5041d24fb9054fb.json",
+					"jsonFile" : "target-main-Debug-492f8a3fae632d140472.json",
 					"name" : "main",
 					"projectIndex" : 0
 				}
@@ -159,8 +159,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug",
-		"source" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3"
+		"build" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug",
+		"source" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics"
 	},
 	"version" : 
 	{

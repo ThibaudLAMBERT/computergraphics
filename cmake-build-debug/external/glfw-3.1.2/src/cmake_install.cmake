@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glfw-3.1.2/src
+# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

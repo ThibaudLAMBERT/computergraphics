@@ -95,15 +95,15 @@
 			[
 				{
 					"backtrace" : 5,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-3.3/include"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glfw-3.1.2/src"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/src"
 				},
 				{
 					"backtrace" : 6,
-					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/external/glfw-3.1.2/src"
+					"path" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/external/glfw-3.1.2/src"
 				}
 			],
 			"language" : "C",

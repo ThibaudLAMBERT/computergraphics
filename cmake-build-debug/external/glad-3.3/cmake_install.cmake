@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-3.3
+# Install script for directory: C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

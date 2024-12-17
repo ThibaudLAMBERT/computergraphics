@@ -67,7 +67,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug"
+			"value" : "c:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -587,7 +587,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -671,7 +671,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -711,7 +711,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "C:/PROGRA~1/JETBRA~1/CLION2~1.2/bin/ninja/win/x64/ninja.exe"
+			"value" : "C:/Program Files/JetBrains/CLion 2024.2.2/bin/ninja/win/x64/ninja.exe"
 		},
 		{
 			"name" : "CMAKE_MODULE_LINKER_FLAGS",
@@ -1327,7 +1327,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/external/glfw-3.1.2"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/external/glfw-3.1.2"
 		},
 		{
 			"name" : "GLFW_BUILD_DOCS",
@@ -1423,7 +1423,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glfw-3.1.2"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2"
 		},
 		{
 			"name" : "GLFW_USE_EGL",
@@ -1551,7 +1551,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug"
 		},
 		{
 			"name" : "finalProject3_IS_TOP_LEVEL",
@@ -1575,7 +1575,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics"
 		},
 		{
 			"name" : "glad_BINARY_DIR",
@@ -1587,7 +1587,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/cmake-build-debug/external/glad-3.3"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/external/glad-3.3"
 		},
 		{
 			"name" : "glad_IS_TOP_LEVEL",
@@ -1611,7 +1611,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/Computer Graphics/lab/finalProject3/external/glad-3.3"
+			"value" : "C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3"
 		},
 		{
 			"name" : "glfw_LIB_DEPENDS",
