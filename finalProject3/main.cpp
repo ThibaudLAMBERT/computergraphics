@@ -17,13 +17,16 @@
 
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
+static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+
+
 
 // OpenGL camera view parameters
-static glm::vec3 eye_center; // Centre du cube
-static glm::vec3 lookat(0, 0, -1); // Regarde vers l'extérieur
+static glm::vec3 eye_center;
+static glm::vec3 lookat(0, 0, -1);
 static glm::vec3 up(0, 1, 0);
-float cameraSpeed = 50.0f;                     // Vitesse de déplacement
-float yaw = -90.0f;                           // Angle horizontal
+float cameraSpeed = 50.0f;
+float yaw = -90.0f;
 float pitch = 0.0f;
 
 
@@ -372,6 +375,7 @@ int main(void)
 	// Ensure we can capture the escape key being pressed below
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	// Load OpenGL functions, gladLoadGL returns the loaded version, 0 on error.
 	int version = gladLoadGL(glfwGetProcAddress);
@@ -390,7 +394,7 @@ int main(void)
 
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
-					 glm::vec3(100, 100, 100)
+					 glm::vec3(500, 500, 500)
 
 	);
 
@@ -498,4 +502,42 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	static bool firstMouse = true;
+	static float lastX = 400, lastY = 300;
+	static float sensitivity = 0.05f;
+
+	static float yaw = -90.0f;
+	static float pitch = 0.0f;
+
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+
+	if (pitch > 89.0f) pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	lookat = glm::normalize(front);
 }
