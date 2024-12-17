@@ -20,8 +20,12 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 
 // OpenGL camera view parameters
 static glm::vec3 eye_center; // Centre du cube
-static glm::vec3 lookat(0, 0, 0); // Regarde vers l'extérieur
+static glm::vec3 lookat(0, 0, -1); // Regarde vers l'extérieur
 static glm::vec3 up(0, 1, 0);
+float cameraSpeed = 50.0f;                     // Vitesse de déplacement
+float yaw = -90.0f;                           // Angle horizontal
+float pitch = 0.0f;
+
 
 // View control
 static float viewAzimuth = 0.f;
@@ -386,7 +390,7 @@ int main(void)
 
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
-					 glm::vec3(30, 30, 30)
+					 glm::vec3(100, 100, 100)
 
 	);
 
@@ -408,7 +412,7 @@ int main(void)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		viewMatrix = glm::lookAt(eye_center, lookat, up);
+		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
 		// Render the building
@@ -441,6 +445,29 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		eye_center.x = viewDistance * cos(viewAzimuth);
 		eye_center.z = viewDistance * sin(viewAzimuth);
 		std::cout << "Reset." << std::endl;
+	}
+
+	static float deltaTime = 0.016f; // Temps fixe pour simplifier
+
+	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		if (key == GLFW_KEY_W) {
+			eye_center += lookat * cameraSpeed * deltaTime; // Avancer
+		}
+		if (key == GLFW_KEY_S) {
+			eye_center -= lookat * cameraSpeed * deltaTime; // Reculer
+		}
+		if (key == GLFW_KEY_A) {
+			yaw -= 5.0f; // Tourner à gauche
+		}
+		if (key == GLFW_KEY_D) {
+			yaw += 5.0f; // Tourner à droite
+		}
+
+		// Met à jour la direction en fonction de yaw et pitch
+		lookat.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		lookat.y = sin(glm::radians(pitch));
+		lookat.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		lookat = glm::normalize(lookat); // Normalise pour éviter les problèmes
 	}
 
 	if (key == GLFW_KEY_UP && (action == GLFW_REPEAT || action == GLFW_PRESS))
