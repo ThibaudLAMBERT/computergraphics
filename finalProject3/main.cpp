@@ -36,9 +36,9 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     glBindTexture(GL_TEXTURE_2D, texture);
 
     // To tile textures on a box, we set wrapping to repeat
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // ou GL_CLAMP_TO_EDGE
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // ou GL_CLAMP_TO_EDGE
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // ou GL_LINEAR_MIPMAP_LINEAR si tu utilises des mipmaps
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
@@ -53,7 +53,7 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
-struct Box {
+struct SkyBox {
 	glm::vec3 position;		// Position of the box
 	glm::vec3 scale;		// Size of the box in each axis
 
@@ -161,55 +161,42 @@ struct Box {
 		20, 23, 22, // triangle 2
 	};
 
-    // TODO: Define UV buffer data
-    // ---------------------------
-    // ---------------------------
 	GLfloat uv_buffer_data[72] = {
+		// pos Z
+		0.25f, 0.666666666f,
+		0.50f, 0.666666666f,
+		0.5f, 0.333333333f,
+		0.25f, 0.3333333333f,
 
+		// neg Z
+		0.75f, 0.667f,
+		1.0f, 0.667f,
+		1.0f, 0.333333333f,
+		0.75f, 0.333333333f,
 
+		// pos X
+		0.0f, 0.667f,
+		0.25f, 0.667f,
+		0.25f, 0.333333333f,
+		0.0f, 0.333333333f,
 
+		// neg X
+		0.50f, 0.667f,
+		0.75f, 0.667f,
+		0.75f, 0.333333333f,
+		0.50f, 0.333333333f,
 
-
-		0.25f, 0.66f,
-		0.5f, 0.66f,
-		0.5f, 0.33f,
-		0.25f, 0.33f,
-
-		0.75f, 0.66f,
-		1.0f, 0.66f,
-		1.0f, 0.33f,
-		0.75f, 0.33f,
-
-		// Left face (+Z)
-
-		0.0f, 0.66f,
-		0.25f, 0.66f,
-		0.25f, 0.33f,
-		0.0f, 0.33f,
-
-		0.5f, 0.66f,
-		0.75f, 0.66f,
-		0.75f, 0.33f,
-		0.5f, 0.33f,
-
-		// Right face (-
-
-
-		0.25f, 0.33f,
-		0.5f, 0.33f,
-		0.5f, 0.0f,
+		// neg Y
+		0.25f, 0.333333333f,
+		0.49f, 0.333333333f,
+		0.49f, 0.0f,
 		0.25f, 0.0f,
 
-
+		// pos Y
 		0.25f, 1.0f,
-		0.5f, 1.0f,
-		0.5f, 0.66f,
-		0.25f, 0.66f,
-
-
-
-		// Bottom face (-Y)
-
+		0.49f, 1.0f,
+		0.49f, 0.666666666f,
+		0.25f, 0.666666666f,
 	};
 
 
@@ -282,7 +269,7 @@ struct Box {
 
 
 
-		textureID = LoadTextureTileBox("../finalProject3/img.png");
+		textureID = LoadTextureTileBox("../finalProject3/StandardCubeMap.png");
 
         // TODO: Get a handle to texture sampler
         // -------------------------------------
@@ -369,7 +356,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(1024, 768, "Lab 2", NULL, NULL);
+	window = glfwCreateWindow(1024, 768, "Final Project", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cerr << "Failed to open a GLFW window." << std::endl;
@@ -397,8 +384,8 @@ int main(void)
 	glEnable(GL_CULL_FACE);
 
 
-	Box mybox;
-	mybox.initialize(glm::vec3 (0, 0, 0),
+	SkyBox my_sky_box;
+	my_sky_box.initialize(glm::vec3 (0, 0, 0),
 					 glm::vec3(30, 30, 30)
 
 	);
@@ -425,7 +412,7 @@ int main(void)
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
 		// Render the building
-		mybox.render(vp);
+		my_sky_box.render(vp);
 
 		// Swap buffers
 		glfwSwapBuffers(window);
@@ -435,7 +422,7 @@ int main(void)
 	while (!glfwWindowShouldClose(window));
 
 	// Clean up
-	mybox.cleanup();
+	my_sky_box.cleanup();
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
