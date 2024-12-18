@@ -6,13 +6,13 @@ in vec2 uv;
 // TODO: To add UV input to this fragment shader
 
 // TODO: To add the texture sampler
-uniform sampler2D buildingSampler;
+uniform sampler2D SkyboxSampler;
 
 out vec3 finalColor;
 
 void main()
 {
-    finalColor = color * texture(buildingSampler, uv).rgb;
+    finalColor = color * texture(SkyboxSampler, uv).rgb;
 
     // TODO: texture lookup.
 }
