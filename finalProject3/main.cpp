@@ -33,7 +33,7 @@ float pitch = 0.0f;
 // View control
 static float viewAzimuth = 0.f;
 static float viewPolar = 0.f;
-static float viewDistance = 0.0f;
+static float viewDistance = -15.0f;
 
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
@@ -665,7 +665,7 @@ int main(void)
 	// Ensure we can capture the escape key being pressed below
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	glfwSetKeyCallback(window, key_callback);
-	//glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	// Load OpenGL functions, gladLoadGL returns the loaded version, 0 on error.
 	int version = gladLoadGL(glfwGetProcAddress);
@@ -683,13 +683,13 @@ int main(void)
 
 
 	Building my_building;
-	my_building.initialize(glm::vec3(0.0f, 0.0f, 0.0f),
-							glm::vec3(16.0f, 150.0f, 16.0f)
+	my_building.initialize(glm::vec3(4000.0f,  -10000.0f + 1500.0f, -8000.0f),
+							glm::vec3(1000.0f, 3000.0f, 1000.0f)
 							);
 
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
-					 glm::vec3(500, 500, 500)
+					 glm::vec3(10000, 10000, 10000)
 
 	);
 
@@ -704,7 +704,7 @@ int main(void)
 	glm::mat4 viewMatrix, projectionMatrix;
     glm::float32 FoV = 45;
 	glm::float32 zNear = 0.1f;
-	glm::float32 zFar = 1000.0f;
+	glm::float32 zFar = 20000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 	do
@@ -717,7 +717,7 @@ int main(void)
 		// Render the building
 
 		glDepthMask(GL_FALSE);
-		my_sky_box.render(vp);  
+		my_sky_box.render(vp);
 		glDepthMask(GL_TRUE);
 
 		my_building.render(vp);
@@ -742,68 +742,50 @@ int main(void)
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode)
 {
-	if (key == GLFW_KEY_R && action == GLFW_PRESS)
-	{
-		viewAzimuth = 0.f;
-		viewPolar = 0.f;
-		eye_center.y = viewDistance * cos(viewPolar);
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-		std::cout << "Reset." << std::endl;
-	}
-
-	static float deltaTime = 0.016f; // Temps fixe pour simplifier
+	static float deltaTime = 0.016f;
+	static float pitch = 0.0f;
+	static float yaw = 0.0f;
+	const float maxPitch = 89.0f;
 
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		if (key == GLFW_KEY_W) {
-			eye_center += lookat * cameraSpeed * deltaTime; // Avancer
+			eye_center += lookat * cameraSpeed * deltaTime;
 		}
 		if (key == GLFW_KEY_S) {
-			eye_center -= lookat * cameraSpeed * deltaTime; // Reculer
+			eye_center -= lookat * cameraSpeed * deltaTime;
 		}
-		if (key == GLFW_KEY_A) {
-			yaw -= 5.0f; // Tourner à gauche
+		if (key == GLFW_KEY_LEFT) {
+			yaw -= 5.0f;
 		}
-		if (key == GLFW_KEY_D) {
-			yaw += 5.0f; // Tourner à droite
+		if (key == GLFW_KEY_RIGHT) {
+			yaw += 5.0f;
 		}
-
-
-		lookat.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-		lookat.y = sin(glm::radians(pitch));
-		lookat.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-		lookat = glm::normalize(lookat);
+		if (key == GLFW_KEY_UP) {
+			pitch += 5.0f;
+			if (pitch > maxPitch) pitch = maxPitch;
+		}
+		if (key == GLFW_KEY_DOWN) {
+			pitch -= 5.0f;
+			if (pitch < -maxPitch) pitch = -maxPitch;
+		}
 	}
 
-	if (key == GLFW_KEY_UP && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewPolar -= 0.1f;
-		eye_center.y = viewDistance * cos(viewPolar);
-	}
 
-	if (key == GLFW_KEY_DOWN && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewPolar += 0.1f;
-		eye_center.y = viewDistance * cos(viewPolar);
-	}
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
-	if (key == GLFW_KEY_LEFT && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewAzimuth -= 0.1f;
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-	}
-
-	if (key == GLFW_KEY_RIGHT && (action == GLFW_REPEAT || action == GLFW_PRESS))
-	{
-		viewAzimuth += 0.1f;
-		eye_center.x = viewDistance * cos(viewAzimuth);
-		eye_center.z = viewDistance * sin(viewAzimuth);
-	}
-
+	lookat = glm::normalize(direction);
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 }
+
+
+
+
+
+
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
