@@ -14,6 +14,11 @@
 #include <random>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>
+
+
+static bool saveDepth = true;
 
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
@@ -25,15 +30,61 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 static glm::vec3 eye_center;
 static glm::vec3 lookat(0, 0, -1);
 static glm::vec3 up(0, 1, 0);
-float cameraSpeed = 50.0f;
+float cameraSpeed = 100.0f;
 float yaw = -90.0f;
 float pitch = 0.0f;
 
+const glm::vec3 wave500(0.0f, 255.0f, 146.0f);
+const glm::vec3 wave600(255.0f, 190.0f, 0.0f);
+const glm::vec3 wave700(205.0f, 0.0f, 0.0f);
 
+static glm::vec3 lightIntensity = 100.0f * (8.0f * wave500 + 15.6f * wave600 + 18.4f * wave700);
+static glm::vec3 lightPosition(0.0f, 5000.0f, 0.0f);
+static glm::vec3 light_lookat(0.0f, -1.0f, 0.0f);
+static glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+
+static glm::vec3 depth_eye_center = glm::vec3(4000.0f, 0.0f, -9000.0f);
+
+static glm::vec3 lightUp(0, 1, 0);
+static int shadowMapWidth = 0;
+static int shadowMapHeight = 0;
+
+
+GLuint fbo;
+GLuint depthTexture;
+
+static float depthFoV = 90.f;
+static float depthNear = 500.f;
+static float depthFar = 20000.f;
 // View control
 static float viewAzimuth = 0.f;
 static float viewPolar = 0.f;
 static float viewDistance = -15.0f;
+
+static int windowWidth = 1024;
+static int windowHeight = 768;
+
+static void saveDepthTexture(GLuint fbo, std::string filename) {
+	int width = shadowMapWidth;
+	int height = shadowMapHeight;
+	if (shadowMapWidth == 0 || shadowMapHeight == 0) {
+		width = windowWidth;
+		height = windowHeight;
+	}
+	int channels = 3;
+
+	std::vector<float> depth(width * height);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glReadBuffer(GL_DEPTH_COMPONENT);
+	glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, depth.data());
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	std::vector<unsigned char> img(width * height * 3);
+	for (int i = 0; i < width * height; ++i) img[3*i] = img[3*i+1] = img[3*i+2] = depth[i] * 255;
+
+	stbi_write_png(filename.c_str(), width, height, channels, img.data(), width * channels);
+
+}
 
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
@@ -199,6 +250,43 @@ struct Building {
 		0.0f, 0.0f,
 	};
 
+	GLfloat normal_buffer_data[72] = {
+		// Front
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+
+		// Back
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+
+		// Left
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+
+		// Right
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		// Top
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		// Bottom
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+	};
 
 
 
@@ -209,19 +297,24 @@ struct Building {
 	GLuint colorBufferID;
 	GLuint uvBufferID;
 	GLuint BuildingtextureID;
+	GLuint normalBufferID;
 
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint textureBuildingSamplerID;
 	GLuint BuildingprogramID;
+	GLuint depthmvpMatrixID;
+	GLuint lightPositionID;
+	GLuint lightIntensityID;
+	GLuint depthProgramID;
+	GLuint lightmvpMatrixID;
+	GLuint shadowMapID;
+	GLuint lightDirectionID;
 
 	void initialize(glm::vec3 position, glm::vec3 scale) {
 		// Define scale of the building geometry
 		this->position = position;
 		this->scale = scale;
-		std::cout << "Numero de vertices: " << std::endl;
-		std::cout << "Position: " << position.x << ", " << position.y << ", " << position.z << std::endl;
-		std::cout << "Scale: " << scale.x << ", " << scale.y << ", " << scale.z << std::endl;
 
 		// Create a vertex array object
 		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f;
@@ -248,7 +341,9 @@ struct Building {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
 		// --------------------------------------------------------
 		// --------------------------------------------------------
-
+		glGenBuffers(1, &normalBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
 
 		// Create an index buffer object to store the index data that defines triangle faces
 		glGenBuffers(1, &indexBufferID);
@@ -266,24 +361,22 @@ struct Building {
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(BuildingprogramID, "MVP");
+		lightPositionID = glGetUniformLocation(BuildingprogramID, "lightPosition");
+		lightIntensityID = glGetUniformLocation(BuildingprogramID, "lightIntensity");
+		lightDirectionID = glGetUniformLocation(BuildingprogramID, "lightDirection");
 
-        // TODO: Load a texture
-        // --------------------
-
-
-
-
+		//lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
+		//shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
 
 		BuildingtextureID = LoadTextureTileBox("../finalProject3/test.jpg");
-
-		// TODO: Get a handle to texture sampler
-		// -------------------------------------
-		std::cout << "Texture id: " << BuildingtextureID << std::endl;
-
-        // TODO: Get a handle to texture sampler
-        // -------------------------------------
 		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
-        // -------------------------------------
+
+		depthProgramID = LoadShadersFromFile("../finalProject3/depth.vert", "../finalProject3/depth.frag");
+		if (depthProgramID == 0) {
+			std::cerr << "Failed to load depth shaders." << std::endl;
+		}
+
+		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
 	}
 
 	void render(glm::mat4 cameraMatrix) {
@@ -296,6 +389,10 @@ struct Building {
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
@@ -315,16 +412,22 @@ struct Building {
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+
+
 		// TODO: Enable UV buffer and texture sampler
 		// ------------------------------------------
-		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, 0);
 		// Set textureSampler to use texture unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, BuildingtextureID);
 		glUniform1i(textureBuildingSamplerID, 0);
-        // ------------------------------------------
+
+
+		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+		// ------------------------------------------
 
 		// Draw the box
 		glDrawElements(
@@ -336,17 +439,18 @@ struct Building {
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
-        //glDisableVertexAttribArray(2);
+		glDisableVertexAttribArray(2);
 	}
-
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
 		glDeleteBuffers(1, &colorBufferID);
 		glDeleteBuffers(1, &indexBufferID);
 		glDeleteVertexArrays(1, &vertexArrayID);
+		glDeleteBuffers(1, &normalBufferID);
 		glDeleteBuffers(1, &uvBufferID);
 		glDeleteTextures(1, &textureBuildingSamplerID);
 		glDeleteProgram(BuildingprogramID);
+		//glDeleteProgram(depthProgramID);
 	}
 };
 
@@ -675,6 +779,32 @@ int main(void)
 		return -1;
 	}
 
+	glfwGetFramebufferSize(window, &shadowMapWidth, &shadowMapHeight);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glGenTextures(1, &depthTexture);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,shadowMapWidth,shadowMapHeight,0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cerr << "Erreur : FBO incomplet" << std::endl;
+	}
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
 
@@ -683,8 +813,8 @@ int main(void)
 
 
 	Building my_building;
-	my_building.initialize(glm::vec3(4000.0f,  -10000.0f + 1500.0f, -8000.0f),
-							glm::vec3(1000.0f, 3000.0f, 1000.0f)
+	my_building.initialize(glm::vec3(4000.0f,  -10000.0f + 2000.0f, -9000.0f),
+							glm::vec3(1000.0f, 4000.0f, 1000.0f)
 							);
 
 	SkyBox my_sky_box;
@@ -693,7 +823,6 @@ int main(void)
 
 	);
 
-    // ---------------------------
 
 	// Camera setup
     eye_center.y = viewDistance * cos(viewPolar);
@@ -707,21 +836,33 @@ int main(void)
 	glm::float32 zFar = 20000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
+
 	do
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
 		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-		// Render the building
+
 
 		glDepthMask(GL_FALSE);
 		my_sky_box.render(vp);
 		glDepthMask(GL_TRUE);
 
+
+
+
+
 		my_building.render(vp);
 
+		if (saveDepth) {
+			std::string filename = "../lab3/depth_camera.png";
+			saveDepthTexture(fbo, filename);
+			std::cout << "Depth texture saved to " << filename << std::endl;
+			saveDepth = false;
+		}
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
