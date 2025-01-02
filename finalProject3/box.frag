@@ -4,7 +4,7 @@ in vec3 color;
 in vec2 uv;
 in vec3 worldPosition;
 in vec3 worldNormal;
-//in vec4 fragPos;
+in vec4 fragPos;
 
 // TODO: To add UV input to this fragment shader
 
@@ -12,35 +12,51 @@ in vec3 worldNormal;
 uniform sampler2D buildingSampler;
 uniform vec3 lightPosition;
 uniform vec3 lightIntensity;
-uniform vec3 lightDirecction;
-//uniform mat4 lightSpaceMatrix;
-//uniform sampler2D shadowMap;
+uniform vec3 lightDirection;
+uniform mat4 lightSpaceMatrix;
+uniform sampler2D shadowMap;
 
 out vec3 finalColor;
 
 void main()
 {
-    vec3 lightDir = normalize(lightPosition - worldPosition);
+    vec3 normal = normalize(worldNormal);
+    vec3 lightDir = normalize(-lightDirection);
 
 
-    float distance = length(lightPosition - worldPosition);
+    float cosTheta = max(dot(normal, lightDir), 0.0);
 
-    float cosTheta = dot(normalize(worldNormal), lightDir);
+    vec3 irradiance = lightIntensity;
 
-
-    vec3 irradiance = lightIntensity / (4.0 * 3.14159 * (distance/1000) * (distance/1000));
-
-    vec3 diffuse = (color / 3.14159) * cosTheta * irradiance;
+    vec3 diffuse = color * cosTheta * irradiance;
 
     vec3 colorAfterToneMapping = diffuse / (1 + diffuse);
 
-    float gamma =  2.8;
+    float gamma =  2.2;
 
     vec3 gammaCorrectedColor = pow(colorAfterToneMapping, vec3 (1/gamma));
 
 
-    finalColor = texture(buildingSampler, uv).rgb * gammaCorrectedColor ;
-    //finalColor = gammaCorrectedColor * shadow * color * texture(buildingSampler, uv).rgb;
+    vec4 shadowCoord = fragPos/ fragPos.w;
+    shadowCoord = shadowCoord * 0.5 + 0.5;
 
+    float shadow;
+
+    if (shadowCoord.x < 0 || shadowCoord.x > 1 || shadowCoord.y < 0 || shadowCoord.y > 1 || shadowCoord.z < 0 || shadowCoord.z > 1) {
+        shadow = 1.0;
+    } else {
+        float depth = shadowCoord.z;
+
+
+        float existingDepth = texture(shadowMap, shadowCoord.xy).r;
+
+        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+        shadow = (depth >= existingDepth + bias) ? 0.2 : 1.0;
+
+    }
+
+
+    finalColor = texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
+    //finalColor = normalize(worldNormal) * 0.5 + 0.5; // [-1, 1] -> [0, 1]
     // TODO: texture lookup.
 }

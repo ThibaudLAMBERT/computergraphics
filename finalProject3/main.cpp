@@ -18,7 +18,7 @@
 #include <stb/stb_image_write.h>
 
 
-static bool saveDepth = true;
+
 
 static GLFWwindow *window;
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
@@ -39,23 +39,36 @@ const glm::vec3 wave600(255.0f, 190.0f, 0.0f);
 const glm::vec3 wave700(205.0f, 0.0f, 0.0f);
 
 static glm::vec3 lightIntensity = 100.0f * (8.0f * wave500 + 15.6f * wave600 + 18.4f * wave700);
-static glm::vec3 lightPosition(0.0f, 5000.0f, 0.0f);
 static glm::vec3 light_lookat(0.0f, -1.0f, 0.0f);
-static glm::vec3 lightDirection = glm::normalize(glm::vec3(0.0f, -1.0f, 0.0f));
+static glm::vec3 lightDirection (-1.0f, -1.0f, -1.0f);
+static glm::vec3 lightPosition(0,10000,0);
 
-static glm::vec3 depth_eye_center = glm::vec3(4000.0f, 0.0f, -9000.0f);
+static glm::vec3 Position(0,0,0);
+static glm::vec3 Target = Position + lightDirection;
+
+
+
+float orthoLeft = -11000.0f;
+float orthoRight = 11000.0f;
+float orthoBottom = -11000.0f;
+float orthoTop = 11000.0f;
+float orthoNear = 10.0f;
+float orthoFar = 30000.0f;
+
+
+static float depthFoV = 80.f;
+static float depthNear = 100.f;
+static float depthFar = 10000.f;
+
 
 static glm::vec3 lightUp(0, 1, 0);
-static int shadowMapWidth = 0;
-static int shadowMapHeight = 0;
+static int shadowMapWidth = 1024;
+static int shadowMapHeight = 768;
 
 
 GLuint fbo;
 GLuint depthTexture;
 
-static float depthFoV = 90.f;
-static float depthNear = 500.f;
-static float depthFar = 20000.f;
 // View control
 static float viewAzimuth = 0.f;
 static float viewPolar = 0.f;
@@ -63,6 +76,8 @@ static float viewDistance = -15.0f;
 
 static int windowWidth = 1024;
 static int windowHeight = 768;
+
+static bool saveDepth = true;
 
 static void saveDepthTexture(GLuint fbo, std::string filename) {
 	int width = shadowMapWidth;
@@ -111,11 +126,21 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
+void afficherMatrice(const glm::mat4& mat) {
+	for (int i = 0; i < 4; ++i) { // Parcours des lignes
+		for (int j = 0; j < 4; ++j) { // Parcours des colonnes
+			std::cout << mat[i][j] << " "; // Accès à l'élément [i][j]
+		}
+		std::cout << std::endl; // Nouvelle ligne après chaque ligne
+	}
+}
+
 struct Building {
 	glm::vec3 position;		// Position of the box
 	glm::vec3 scale;		// Size of the box in each axis
 
 	GLfloat vertex_buffer_data[72] = {	// Vertex definition for a canonical box
+
 		// Front face
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f,
@@ -239,14 +264,14 @@ struct Building {
 		0.0f, 0.0f,
 
 		// Top - we do not want texture the top
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
 		0.0f, 0.0f,
 		 // Bottom - we do not want texture the bottom
-		0.0f, 0.0f,
-		0.0f, 0.0f,
-		0.0f, 0.0f,
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
 		0.0f, 0.0f,
 	};
 
@@ -310,6 +335,7 @@ struct Building {
 	GLuint lightmvpMatrixID;
 	GLuint shadowMapID;
 	GLuint lightDirectionID;
+	GLuint modelID;
 
 	void initialize(glm::vec3 position, glm::vec3 scale) {
 		// Define scale of the building geometry
@@ -356,7 +382,15 @@ struct Building {
 		{
 			std::cerr << "Failed to load shaders." << std::endl;
 		}
+		glm::mat4 modelMatrix = glm::mat4();
+		// Scale the box along each axis to make it look like a building
 
+		modelMatrix = glm::translate(modelMatrix, position);
+
+		modelMatrix = glm::scale(modelMatrix, scale);
+
+		std::cout << "Model matrix" << std::endl;
+		//afficherMatrice(modelMatrix);
 
 
 		// Get a handle for our "MVP" uniform
@@ -365,8 +399,10 @@ struct Building {
 		lightIntensityID = glGetUniformLocation(BuildingprogramID, "lightIntensity");
 		lightDirectionID = glGetUniformLocation(BuildingprogramID, "lightDirection");
 
-		//lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
-		//shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
+
+
+		lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
+		shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
 
 		BuildingtextureID = LoadTextureTileBox("../finalProject3/test.jpg");
 		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
@@ -377,9 +413,10 @@ struct Building {
 		}
 
 		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
+		modelID = glGetUniformLocation(depthProgramID, "model");
 	}
 
-	void render(glm::mat4 cameraMatrix) {
+	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
 		glUseProgram(BuildingprogramID);
 
 		glEnableVertexAttribArray(0);
@@ -412,7 +449,12 @@ struct Building {
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
+		glUniform1i(shadowMapID,0);
+		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
+
+		//glUniformMatrix4fv(modelID,1, GL_FALSE, &modelMatrix[0][0]);
 
 		// TODO: Enable UV buffer and texture sampler
 		// ------------------------------------------
@@ -427,6 +469,7 @@ struct Building {
 
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
 		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+		glUniform3fv(lightDirectionID, 1, &lightDirection[0]);
 		// ------------------------------------------
 
 		// Draw the box
@@ -441,6 +484,38 @@ struct Building {
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 	}
+	void render_depth(glm::mat4 lightSpaceMatrix) {
+
+		glUseProgram(depthProgramID);
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+		// Set light-space matrix
+
+		glm::mat4 modelMatrix = glm::mat4();
+		// Scale the box along each axis to make it look like a building
+
+		modelMatrix = glm::translate(modelMatrix, position);
+
+		modelMatrix = glm::scale(modelMatrix, scale);
+
+		glm::mat4 mvpLight = lightSpaceMatrix * modelMatrix;
+
+
+
+
+
+		glUniformMatrix4fv(depthmvpMatrixID, 1, GL_FALSE, &mvpLight[0][0]);
+
+		// Draw the box
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, (void*)0);
+
+		glDisableVertexAttribArray(0);
+	}
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
 		glDeleteBuffers(1, &colorBufferID);
@@ -450,7 +525,7 @@ struct Building {
 		glDeleteBuffers(1, &uvBufferID);
 		glDeleteTextures(1, &textureBuildingSamplerID);
 		glDeleteProgram(BuildingprogramID);
-		//glDeleteProgram(depthProgramID);
+		glDeleteProgram(depthProgramID);
 	}
 };
 
@@ -615,6 +690,12 @@ struct SkyBox {
 	GLuint mvpMatrixID;
 	GLuint textureSkyboxSamplerID;
 	GLuint SkyboxprogramID;
+	GLuint lightPositionID;
+	GLuint lightIntensityID;
+	GLuint lightmvpMatrixID;
+	GLuint shadowMapID;
+	GLuint depthProgramID;
+	GLuint depthmvpMatrixID;
 
 	void initialize(glm::vec3 position, glm::vec3 scale) {
 		// Define scale of the building geometry
@@ -664,6 +745,10 @@ struct SkyBox {
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(SkyboxprogramID, "MVP");
+		lightPositionID = glGetUniformLocation(SkyboxprogramID, "lightPosition");
+		lightIntensityID = glGetUniformLocation(SkyboxprogramID, "lightIntensity");
+		lightmvpMatrixID = glGetUniformLocation(SkyboxprogramID, "lightSpaceMatrix");
+		shadowMapID = glGetUniformLocation(SkyboxprogramID, "shadowMap");
 
         // TODO: Load a texture
         // --------------------
@@ -675,10 +760,17 @@ struct SkyBox {
         // TODO: Get a handle to texture sampler
         // -------------------------------------
 		textureSkyboxSamplerID = glGetUniformLocation(SkyboxprogramID,"SkyboxSampler");
+
+		depthProgramID = LoadShadersFromFile("../finalProject3/depth.vert", "../finalProject3/depth.frag");
+		if (depthProgramID == 0) {
+			std::cerr << "Failed to load depth shaders." << std::endl;
+		}
+
+		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
         // -------------------------------------
 	}
 
-	void render(glm::mat4 cameraMatrix) {
+	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
 		glUseProgram(SkyboxprogramID);
 
 		glEnableVertexAttribArray(0);
@@ -707,6 +799,15 @@ struct SkyBox {
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+		glUniform1i(shadowMapID, 0);
+
+		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+
+		// Set light data
+		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+
 		// TODO: Enable UV buffer and texture sampler
 		// ------------------------------------------
 		glEnableVertexAttribArray(2);
@@ -729,6 +830,25 @@ struct SkyBox {
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
         //glDisableVertexAttribArray(2);
+	}
+	void render_depth(glm::mat4 lightSpaceMatrix) {
+
+		glUseProgram(depthProgramID);
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+		// Set light-space matrix
+
+		glUniformMatrix4fv(depthmvpMatrixID, 1, GL_FALSE, &lightSpaceMatrix[0][0]);
+
+		// Draw the box
+		glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, (void*)0);
+
+		glDisableVertexAttribArray(0);
 	}
 
 	void cleanup() {
@@ -757,7 +877,7 @@ int main(void)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Open a window and create its OpenGL context
-	window = glfwCreateWindow(1024, 768, "Final Project", NULL, NULL);
+	window = glfwCreateWindow(windowWidth, windowHeight, "Final Project", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cerr << "Failed to open a GLFW window." << std::endl;
@@ -784,6 +904,8 @@ int main(void)
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
+
+
 	glGenTextures(1, &depthTexture);
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
 	glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,shadowMapWidth,shadowMapHeight,0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
@@ -792,6 +914,7 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
 
@@ -805,16 +928,17 @@ int main(void)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-
 	Building my_building;
-	my_building.initialize(glm::vec3(4000.0f,  -10000.0f + 2000.0f, -9000.0f),
-							glm::vec3(1000.0f, 4000.0f, 1000.0f)
+	my_building.initialize(glm::vec3(-6000.0f,  -10000.0f, -6000.0f),
+							glm::vec3(1000.0f, 3000.0f, 1000.0f)
 							);
 
 	SkyBox my_sky_box;
@@ -837,28 +961,67 @@ int main(void)
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
 
+	//glm::float32 depthFov = 80.0f;
+	//glm::float32 depthNear = 10.0f;
+	//glm::float32 depthFar = 10000.0f;
+
+
+
+
+	glm::mat4 lightProjectionMatrix = glm::ortho(
+	orthoLeft, orthoRight,
+	orthoBottom, orthoTop,
+	orthoNear, orthoFar
+);
+
+
+
+
+/*
+
+	glm::mat4 lightProjectionMatrix = glm::perspective(glm::radians(depthFov), (float)shadowMapWidth / shadowMapHeight, depthNear, depthFar);
+*/
 	do
 	{
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		glm::mat4 lightViewMatrix = glm::lookAt(lightPosition, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		//glm::mat4 lightViewMatrix = glm::lookAt(lightPosition,lightPosition + glm::normalize(lightDirection),glm::vec3(0,1,0));
+		glm::mat4 lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
+
+
+
+		//glViewport(0,0,shadowMapWidth,shadowMapHeight);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+		my_sky_box.render_depth(lightSpaceMatrix);
+		my_building.render_depth(lightSpaceMatrix);
+
+
+
+		//glViewport(0,0,windowWidth,windowHeight);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-
+		//glBindTexture(GL_TEXTURE_2D, depthTexture);
 
 		glDepthMask(GL_FALSE);
-		my_sky_box.render(vp);
+		my_sky_box.render(vp,lightSpaceMatrix);
 		glDepthMask(GL_TRUE);
 
-
-
-
-
-		my_building.render(vp);
+		my_building.render(vp,lightSpaceMatrix);
 
 		if (saveDepth) {
-			std::string filename = "../lab3/depth_camera.png";
+			std::string filename = "../finalProject3/depth_camera3.png";
 			saveDepthTexture(fbo, filename);
 			std::cout << "Depth texture saved to " << filename << std::endl;
 			saveDepth = false;
