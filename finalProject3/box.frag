@@ -50,13 +50,12 @@ void main()
 
         float existingDepth = texture(shadowMap, shadowCoord.xy).r;
 
-        float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-        shadow = (depth >= existingDepth + bias) ? 0.2 : 1.0;
+        shadow = (depth >= existingDepth + 1e-3) ? 0.2 : 1.0;
 
     }
 
 
-    finalColor = texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
+    finalColor =  texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
     //finalColor = normalize(worldNormal) * 0.5 + 0.5; // [-1, 1] -> [0, 1]
     // TODO: texture lookup.
 }

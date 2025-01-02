@@ -1,24 +1,11 @@
 #version 330 core
 
-in vec3 color;
-in vec2 uv;
 in vec4 fragPos;
+in vec3 color;
 
-// TODO: To add UV input to this fragment shader
-
-// TODO: To add the texture sampler
-
-
-
-// TODO: To add UV input to this fragment shader
-
-// TODO: To add the texture sampler
-uniform vec3 lightPosition;
-uniform vec3 lightIntensity;
-uniform vec3 lightDirection;
 uniform mat4 lightSpaceMatrix;
 uniform sampler2D shadowMap;
-uniform sampler2D SkyboxSampler;
+
 
 
 out vec3 finalColor;
@@ -38,10 +25,9 @@ void main()
 
         float existingDepth = texture(shadowMap, shadowCoord.xy).r;
 
-
         shadow = (depth >= existingDepth + 1e-3) ? 0.2 : 1.0;
     }
-    finalColor = color * texture(SkyboxSampler, uv).rgb * shadow;
+    finalColor = color * shadow;
 
     // TODO: texture lookup.
 }
