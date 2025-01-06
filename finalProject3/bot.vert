@@ -10,9 +10,10 @@ layout(location = 4) in vec4 vertexWeight;
 // Output data, to be interpolated for each fragment
 out vec3 worldPosition;
 out vec3 worldNormal;
+out vec2 textCoords;
 
 uniform mat4 MVP;
-uniform mat4 jointMatrices[50];
+uniform mat4 jointMatrices[200];
 
 void main() {
     // Transform vertex
@@ -29,4 +30,5 @@ void main() {
     vec3 skinnedNormal = normalize((mat3(skinMat) * vertexNormal));
     worldNormal = skinnedNormal;
     worldPosition = vec3(skinPosition);
+    textCoords = vertexUV;
 }

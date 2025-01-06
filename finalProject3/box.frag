@@ -24,7 +24,7 @@ void main()
     vec3 lightDir = normalize(-lightDirection);
 
 
-    float cosTheta = max(dot(normal, lightDir), 0.0);
+    float cosTheta = dot(normal, lightDir);
 
     vec3 irradiance = lightIntensity;
 

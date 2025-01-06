@@ -35,7 +35,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 static bool playAnimation = true;
-static float playbackSpeed = 2.0f;
+static float playbackSpeed = 0.5f;
 
 
 
@@ -57,6 +57,10 @@ static glm::vec3 lightIntensity = 100.0f * (8.0f * wave500 + 15.6f * wave600 + 1
 static glm::vec3 light_lookat(0.0f, -1.0f, 0.0f);
 static glm::vec3 lightDirection (-1.0f, -1.0f, -1.0f);
 static glm::vec3 lightPosition(9900,9900,9900);
+
+// Lighting
+static glm::vec3 lightIntensity2(5e6f, 5e6f, 5e6f);
+static glm::vec3 lightPosition2(-275.0f, 500.0f, 800.0f);
 
 static glm::vec3 Position(0,0,0);
 static glm::vec3 Target = Position + lightDirection;
@@ -896,17 +900,22 @@ struct SkyBox {
 };
 
 
-struct MyBot {
 
-	glm::vec3 position;
+
+struct Bird {
+
 	glm::vec3 scale;
-
+	glm::vec3 position;
+	glm::vec3 axis;
+	float angle;
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint jointMatricesID;
 	GLuint lightPositionID;
 	GLuint lightIntensityID;
 	GLuint programID;
+	GLuint textureID;
+	GLuint textureSamplerID;
 
 	tinygltf::Model model;
 
@@ -963,8 +972,7 @@ struct MyBot {
 				transform = glm::scale(transform, glm::vec3(node.scale[0], node.scale[1], node.scale[2]));
 			}
 		}
-		glm::mat4 PositionBot = glm::translate(glm::mat4(1.0f), glm::vec3(0, 13000, 0));
-		return transform * PositionBot;
+		return transform;
 	}
 
 	void computeLocalNodeTransform(const tinygltf::Model& model,
@@ -1188,39 +1196,40 @@ struct MyBot {
 			if (channel.target_path == "translation") {
 	            glm::vec3 translation0, translation1;
 
-
+	            // Lire les données de translation des keyframes voisins
 	            memcpy(&translation0, outputPtr + keyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 	            memcpy(&translation1, outputPtr + nextKeyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 
-
+	            // Interpolation linéaire
 	            glm::vec3 interpolatedTranslation = glm::mix(translation0, translation1, interpolationFactor);
 
+	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] = glm::translate(nodeTransforms[targetNodeIndex], interpolatedTranslation);
 
 	        } else if (channel.target_path == "rotation") {
 	            glm::quat rotation0, rotation1;
 
-
+	            // Lire les données de rotation des keyframes voisins
 	            memcpy(&rotation0, outputPtr + keyframeIndex * 4 * sizeof(float), 4 * sizeof(float));
 	            memcpy(&rotation1, outputPtr + nextKeyframeIndex * 4 * sizeof(float), 4 * sizeof(float));
 
-
+	            // Interpolation sphérique (SLERP) pour les quaternions
 	            glm::quat interpolatedRotation = glm::slerp(rotation0, rotation1, interpolationFactor);
 
-
+	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] *= glm::mat4_cast(interpolatedRotation);
 
 	        } else if (channel.target_path == "scale") {
 	            glm::vec3 scale0, scale1;
 
-
+	            // Lire les données d'échelle des keyframes voisins
 	            memcpy(&scale0, outputPtr + keyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 	            memcpy(&scale1, outputPtr + nextKeyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 
-
+	            // Interpolation linéaire
 	            glm::vec3 interpolatedScale = glm::mix(scale0, scale1, interpolationFactor);
 
-
+	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] = glm::scale(nodeTransforms[targetNodeIndex], interpolatedScale);
 	        }
 		}
@@ -1298,12 +1307,14 @@ struct MyBot {
 		return res;
 	}
 
-	void initialize(glm::vec3 position, glm::vec3 scale) {
+	void initialize( glm::vec3 position,glm::vec3 scale, glm::vec3 axis, float angle) {
 		this->position = position;
 		this->scale = scale;
+		this->axis = axis;
+		this->angle = angle;
 
 		// Modify your path if needed
-		if (!loadModel(model, "../finalProject3/bot/scene.gltf")) {
+		if (!loadModel(model, "../finalProject3/bot/bird.gltf")) {
 			return;
 		}
 
@@ -1329,10 +1340,19 @@ struct MyBot {
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
 		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
 
+		glActiveTexture(GL_TEXTURE1);
+
+		// Load a texture
+		textureID = LoadTextureTileBox("../finalProject3/Tex_Ride_FengHuang_01a_D_A.tga.png");
+
+		// Get a handle for our "textureSampler" uniform
+		textureSamplerID = glGetUniformLocation(programID,"textureSampler");
+
 		// Ensure no VAO or shader program is left active
 		glBindVertexArray(0);  // Unbind any VAO
 		glUseProgram(0);       // Unbind any shader program
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 
 	}
 
@@ -1483,12 +1503,13 @@ struct MyBot {
 	void render(glm::mat4 cameraMatrix) {
 		glUseProgram(programID);
 
-		// Set camera
-		glm::mat4 ModelMatrix = glm::mat4();
-		ModelMatrix = glm::translate(ModelMatrix, position);
-		ModelMatrix = glm::scale(ModelMatrix, scale);
 
-		glm::mat4 mvp = cameraMatrix * ModelMatrix;
+		glm::mat4 modelMatrix = glm::mat4();
+		modelMatrix = glm::scale(modelMatrix, scale);
+		modelMatrix = glm::rotate(modelMatrix, angle, axis);
+		modelMatrix = glm::translate(modelMatrix, position);
+		// Set camera
+		glm::mat4 mvp = cameraMatrix * modelMatrix;
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
 
@@ -1499,6 +1520,9 @@ struct MyBot {
 
 		// -----------------------------------------------------------------
 
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glUniform1i(textureSamplerID, 1);
 
 		// Set light data
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
@@ -1512,6 +1536,7 @@ struct MyBot {
 		glDeleteProgram(programID);
 	}
 };
+
 
 
 int main(void)
@@ -1588,18 +1613,25 @@ int main(void)
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+	//glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-
+	//glCullFace(GL_BACK);
+/*
 	MyBot bot;
-	bot.initialize(glm::vec3(150,-150,150),
-	glm::vec3(1,1,1)
+	bot.initialize(glm::vec3(0,2000,-1000),
+	glm::vec3(1,1,1),glm::vec3(0,0,1),glm::radians(45.0f)
 					);
+*/
+	Bird bot;
+	bot.initialize(glm::vec3(0,3000,1000),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(45.0f)
+		);
 
 	Building my_building;
-	my_building.initialize(glm::vec3(4000.0f,  -10000.0f, 4000.0f),
-							glm::vec3(1000.0f, 3000.0f, 1000.0f)
+	my_building.initialize(glm::vec3(4000.0f,  1000.0f, 5000.0f),
+							glm::vec3(500.0f, 1000.0f, 500.0f)
 							);
 
 	SkyBox my_sky_box;
@@ -1705,7 +1737,7 @@ int main(void)
 			fTime = 0;
 
 			std::stringstream stream;
-			stream << std::fixed << std::setprecision(2) << "Lab 4 | Frames per second (FPS): " << fps;
+			stream << std::fixed << std::setprecision(2) << "Final Project | Frames per second (FPS): " << fps;
 			glfwSetWindowTitle(window, stream.str().c_str());
 		}
 
