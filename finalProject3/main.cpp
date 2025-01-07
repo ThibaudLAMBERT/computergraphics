@@ -145,7 +145,7 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
     return texture;
 }
 
-
+/*
 struct Building {
 	glm::vec3 position;		// Position of the box
 	glm::vec3 scale;		// Size of the box in each axis
@@ -453,7 +453,7 @@ struct Building {
 		glGenBuffers(1, &instanceVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * modelMatrices.size(), &modelMatrices[0], GL_STATIC_DRAW());
-*/
+
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -581,7 +581,7 @@ struct Building {
 		glDeleteProgram(depthProgramID);
 	}
 };
-
+*/
 
 struct SkyBox {
 	glm::vec3 position;		// Position of the box
@@ -860,9 +860,9 @@ struct SkyBox {
 		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
 
-		glActiveTexture(GL_TEXTURE2);
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
-		glUniform1i(shadowMapID, 2);
+		glUniform1i(shadowMapID, 0);
 
 		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
 
@@ -941,6 +941,18 @@ struct SkyBox {
 struct Instance {
 	glm::vec3 position;
 	glm::vec3 scale;
+};
+
+struct Instance_tree {
+	glm::vec3 position;
+	glm::vec3 scale;
+	glm::vec3 axis;
+	float angle;
+};
+
+std::vector<Instance_tree> Tranform_tree {
+	{glm::vec3(-1500,-700,0),glm::vec3(1,1,1), glm::vec3(1,0,0), glm::radians(90.0f)},
+	{glm::vec3(-1700,-700,0),glm::vec3(1,1,1),glm::vec3(1,0,0),glm::radians(90.0f)},
 };
 
 
@@ -1271,9 +1283,9 @@ struct BuildingInstancing2 {
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, 0);
 		// Set textureSampler to use texture unit 0
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, BuildingtextureID);
-		glUniform1i(textureBuildingSamplerID, 0);
+		glUniform1i(textureBuildingSamplerID, 3);
 
 		glEnableVertexAttribArray(4);
 		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
@@ -1798,7 +1810,7 @@ struct Bird {
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
 		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
 
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE4);
 
 		// Load a texture
 		textureID = LoadTextureTileBox("../finalProject3/Tex_Ride_FengHuang_01a_D_A.tga.png");
@@ -1978,9 +1990,9 @@ struct Bird {
 
 		// -----------------------------------------------------------------
 
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glUniform1i(textureSamplerID, 1);
+		glUniform1i(textureSamplerID, 4);
 
 		// Set light data
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
@@ -1994,6 +2006,9 @@ struct Bird {
 		glDeleteProgram(programID);
 	}
 };
+
+
+
 
 
 struct MyBot {
@@ -2042,15 +2057,6 @@ struct MyBot {
 		return transform;
 	}
 
-
-
-
-
-
-
-
-
-
 	bool loadModel(tinygltf::Model &model, const char *filename) {
 		tinygltf::TinyGLTF loader;
 		std::string err;
@@ -2078,9 +2084,8 @@ struct MyBot {
 		this->scale = scale;
 		this->axis = axis;
 		this->angle = angle;
-		// Modify your path if neede
-		// d
-		if (!loadModel(model, "../finalProject3/bot/bird.gltf")) {
+		// Modify your path if needed
+		if (!loadModel(model, "../finalProject3/bot/bamboo.gltf")) {
 			return;
 		}
 
@@ -2101,10 +2106,10 @@ struct MyBot {
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
 		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
 
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE5);
 
 		// Load a texture
-		textureID = LoadTextureTileBox("../finalProject3/Tex_Ride_FengHuang_01a_D_A.tga.png");
+		textureID = LoadTextureTileBox("../finalProject3/bark-20.png");
 
 		// Get a handle for our "textureSampler" uniform
 		textureSamplerID = glGetUniformLocation(programID,"textureSampler");
@@ -2280,13 +2285,13 @@ struct MyBot {
 
 		// -----------------------------------------------------------------
 
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glUniform1i(textureSamplerID, 1);
+		glUniform1i(textureSamplerID, 5);
 
 		// Set light data
-		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
-		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+		glUniform3fv(lightPositionID, 1, &lightPosition2[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity2[0]);
 
 		// Draw the GLTF model
 		drawModel(primitiveObjects, model);
@@ -2296,7 +2301,6 @@ struct MyBot {
 		glDeleteProgram(programID);
 	}
 };
-
 
 int main(void)
 {
@@ -2375,15 +2379,10 @@ int main(void)
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-/*
-	MyBot bot;
-	bot.initialize(glm::vec3(0,2000,-1000),
-	glm::vec3(1,1,1),glm::vec3(0,0,1),glm::radians(45.0f)
-					);
-*/
-	/*
-	Bird bot;
-	bot.initialize(glm::vec3(0,3000,1000),
+
+
+	Bird my_bird;
+	my_bird.initialize(glm::vec3(0,3000,1000),
 		glm::vec3(1,1,1),
 		glm::vec3(1,0,0),
 		glm::radians(45.0f)
@@ -2391,24 +2390,20 @@ int main(void)
 
 
 
-	std::vector<glm::mat4> modelMatrices;
-	std::vector<glm::vec3> positions = {
-		glm::vec3(-4000.0f, 1000.0f, -5000.0f),
-		glm::vec3(4000.0f, 1000.0f, 5000.0f),
-		glm::vec3(4000.0f, -9000.0f, 5000.0f)
-	};
-
-	std::vector<glm::vec3> scales = {
-		glm::vec3(1000.0f, 1000.0f, 1000.0f),
-		glm::vec3(1000.0f, 2000.0f, 1000.0f),
-		glm::vec3(1000.0f, 5000.0f, 1000.0f)
-	};
-	*/
-
-	MyBot bot;
-	bot.initialize(glm::vec3(0,3000,1000),
-		glm::vec3(1,1,1),glm::vec3(1,0,0),glm::radians(45.0f)
+	MyBot tree;
+	tree.initialize(glm::vec3(-1500,-700,0),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(90.0f)
 		);
+
+	MyBot tree2;
+	tree2.initialize(glm::vec3(-1700,-700,0),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(90.0f)
+		);
+
 
 
 	//Building my_building;
@@ -2418,15 +2413,7 @@ int main(void)
 	my_building.initialize();
 
 
-	/*
-	for (size_t i = 0; i < positions.size(); ++i) {
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, positions[i]);
-		model = glm::scale(model, scales[i]);
-		modelMatrices.push_back(model);
-	}
 
-*/
 
 
 	SkyBox my_sky_box;
@@ -2438,10 +2425,17 @@ int main(void)
 
 
 	// Camera setup
+
+
     eye_center.y = viewDistance * cos(viewPolar);
     eye_center.x = viewDistance * cos(viewAzimuth);
     eye_center.z = viewDistance * sin(viewAzimuth);
 
+	/*
+	eye_center.x = -1500.0f;
+	eye_center.y = 0.0f;
+	eye_center.z = 0.0f;
+	*/
 
 	glm::mat4 viewMatrix, projectionMatrix;
     glm::float32 FoV = 45;
@@ -2449,10 +2443,6 @@ int main(void)
 	glm::float32 zFar = 20000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
-
-	//glm::float32 depthFov = 80.0f;
-	//glm::float32 depthNear = 10.0f;
-	//glm::float32 depthFar = 10000.0f;
 
 
 
@@ -2490,7 +2480,7 @@ int main(void)
 
 		my_sky_box.render_depth(lightSpaceMatrix);
 
-		my_building.render_depth(lightSpaceMatrix);
+		//my_building.render_depth(lightSpaceMatrix);
 
 
 
@@ -2504,9 +2494,12 @@ int main(void)
 
 
 		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
+
+
+	//Camera Lab4 //viewMatrix = glm::lookAt(eye_center, glm::vec3(0,0,0), glm::vec3(0,1,0));
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-		/*
+
 
 		double currentTime = glfwGetTime();
 		float deltaTime = float(currentTime - lastTime);
@@ -2514,19 +2507,21 @@ int main(void)
 
 		if (playAnimation) {
 			time += deltaTime * playbackSpeed;
-			bot.update(time);
+			my_bird.update(time);
 		}
-*/
+
 		//glDepthMask(GL_FALSE);
 		my_sky_box.render(vp,lightSpaceMatrix);
 		//glDepthMask(GL_TRUE);
-		bot.render(vp);
+		tree.render(vp);
+		tree2.render(vp);
+		my_bird.render(vp);
 
-		my_building.render(vp,lightSpaceMatrix);
+		//my_building.render(vp,lightSpaceMatrix);
 
 
 
-/*
+
 		frames++;
 		fTime += deltaTime;
 		if (fTime > 2.0f) {
@@ -2540,7 +2535,7 @@ int main(void)
 		}
 
 
-*/
+
 
 		if (saveDepth) {
 			std::string filename = "../finalProject3/depth_camera.png";
@@ -2558,7 +2553,8 @@ int main(void)
 	// Clean up
 	my_sky_box.cleanup();
 	my_building.cleanup();
-	bot.cleanup();
+	my_bird.cleanup();
+	tree.cleanup();
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();

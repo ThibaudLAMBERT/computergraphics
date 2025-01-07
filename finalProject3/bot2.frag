@@ -23,5 +23,7 @@ void main()
     v = v / (1.0 + v);
 
     // Gamma correction
-    finalColor = texture(textureSampler,textCoords).rgb * pow(v, vec3(1.0 / 2.2));
+    finalColor = texture(textureSampler, textCoords).rgb * pow(v, vec3(1.0 / 2.2));
+
+    //texture(textureSampler, textCoords).rgb *
 }
