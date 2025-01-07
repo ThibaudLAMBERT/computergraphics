@@ -35,6 +35,7 @@ void main() {
 
 
 
+
     // Transform vertex
     gl_Position =  MVP * model * vec4(vertexPosition, 1);
 

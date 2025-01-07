@@ -62,6 +62,9 @@ static glm::vec3 lightPosition(9900,9900,9900);
 static glm::vec3 lightIntensity2(5e6f, 5e6f, 5e6f);
 static glm::vec3 lightPosition2(-275.0f, 500.0f, 800.0f);
 
+static glm::vec3 lightIntensity3(3e5f, 3e5f, 3e5f);
+static glm::vec3 lightPosition3(-275.0f, 500.0f, 800.0f);
+
 static glm::vec3 Position(0,0,0);
 static glm::vec3 Target = Position + lightDirection;
 
@@ -946,14 +949,22 @@ struct Instance {
 struct Instance_tree {
 	glm::vec3 position;
 	glm::vec3 scale;
-	glm::vec3 axis;
-	float angle;
 };
 
+std::vector<Instance_tree> Tranform_tree;
+
+/*
 std::vector<Instance_tree> Tranform_tree {
-	{glm::vec3(-1500,-700,0),glm::vec3(1,1,1), glm::vec3(1,0,0), glm::radians(90.0f)},
-	{glm::vec3(-1700,-700,0),glm::vec3(1,1,1),glm::vec3(1,0,0),glm::radians(90.0f)},
+	{glm::vec3(-1500,-700,0),glm::vec3(1,1,1)},
+	{glm::vec3(-1600,-700,5),glm::vec3(1,1,1)},
+{glm::vec3(-1700,-700,10),glm::vec3(1,1,1)},
+{glm::vec3(-1800,-700,15),glm::vec3(1,1,1)},
+{glm::vec3(-1900,-700,20),glm::vec3(1,1,1)},
+{glm::vec3(-2000,-700,25),glm::vec3(1,1,1)},
 };
+*/
+
+
 
 
 std::vector<Instance> Test {
@@ -2011,12 +2022,8 @@ struct Bird {
 
 
 
-struct MyBot {
+struct Bamboo {
 
-	glm::vec3 position;
-	glm::vec3 scale;
-	glm::vec3 axis;
-	float angle;
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint jointMatricesID;
@@ -2025,7 +2032,7 @@ struct MyBot {
 	GLuint programID;
 	GLuint textureID;
 	GLuint textureSamplerID;
-
+	GLuint instanceBufferID;
 
 	tinygltf::Model model;
 
@@ -2079,11 +2086,8 @@ struct MyBot {
 		return res;
 	}
 
-	void initialize(glm::vec3 position, glm::vec3 scale,glm::vec3 axis, float angle) {
-		this->position = position;
-		this->scale = scale;
-		this->axis = axis;
-		this->angle = angle;
+	void initialize() {
+
 		// Modify your path if needed
 		if (!loadModel(model, "../finalProject3/bot/bamboo.gltf")) {
 			return;
@@ -2107,6 +2111,14 @@ struct MyBot {
 		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
 
 		glActiveTexture(GL_TEXTURE5);
+
+
+		glGenBuffers(1, &instanceBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
+		glBufferData(GL_ARRAY_BUFFER, Tranform_tree.size() * sizeof(Instance_tree), Tranform_tree.data(), GL_STATIC_DRAW);
+
+
+
 
 		// Load a texture
 		textureID = LoadTextureTileBox("../finalProject3/bark-20.png");
@@ -2239,9 +2251,20 @@ struct MyBot {
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
 
-			glDrawElements(primitive.mode, indexAccessor.count,
+			glEnableVertexAttribArray(6);
+			glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
+			glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_tree), (void*)0);
+			glVertexAttribDivisor(6, 1);
+
+			glEnableVertexAttribArray(7);
+			glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_tree), (void*)offsetof(Instance, scale));
+			glVertexAttribDivisor(7, 1);
+
+			glDrawElementsInstanced(primitive.mode, indexAccessor.count,
 						indexAccessor.componentType,
-						BUFFER_OFFSET(indexAccessor.byteOffset));
+						BUFFER_OFFSET(indexAccessor.byteOffset),
+						Tranform_tree.size()
+						);
 
 			glBindVertexArray(0);
 		}
@@ -2269,10 +2292,9 @@ struct MyBot {
 	void render(glm::mat4 cameraMatrix) {
 		glUseProgram(programID);
 
+
 		glm::mat4 modelMatrix = glm::mat4();
-		modelMatrix = glm::scale(modelMatrix, scale);
-		modelMatrix = glm::rotate(modelMatrix, angle, axis);
-		modelMatrix = glm::translate(modelMatrix, position);
+		modelMatrix = glm::rotate(modelMatrix,glm::radians(90.0f),glm::vec3(1,0,0));
 		// Set camera
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 
@@ -2290,8 +2312,8 @@ struct MyBot {
 		glUniform1i(textureSamplerID, 5);
 
 		// Set light data
-		glUniform3fv(lightPositionID, 1, &lightPosition2[0]);
-		glUniform3fv(lightIntensityID, 1, &lightIntensity2[0]);
+		glUniform3fv(lightPositionID, 1, &lightPosition3[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity3[0]);
 
 		// Draw the GLTF model
 		drawModel(primitiveObjects, model);
@@ -2301,6 +2323,10 @@ struct MyBot {
 		glDeleteProgram(programID);
 	}
 };
+
+
+
+
 
 int main(void)
 {
@@ -2381,6 +2407,17 @@ int main(void)
 	glCullFace(GL_BACK);
 
 
+	for (int i = 0; i < 20; ++i) {
+		glm::vec3 position(-3500 - (i * 100), -1600 + (i*100), 200 );
+		glm::vec3 scale(1, 1, 1);
+		Tranform_tree.push_back({position, scale});
+	}
+	for (int i = 0; i < 20; ++i) {
+		glm::vec3 position(-4000 - (i * 100), -1600 + (i*100), 100 );
+		glm::vec3 scale(1, 1, 1);
+		Tranform_tree.push_back({position, scale});
+	}
+
 	Bird my_bird;
 	my_bird.initialize(glm::vec3(0,3000,1000),
 		glm::vec3(1,1,1),
@@ -2389,7 +2426,7 @@ int main(void)
 		);
 
 
-
+/*
 	MyBot tree;
 	tree.initialize(glm::vec3(-1500,-700,0),
 		glm::vec3(1,1,1),
@@ -2403,7 +2440,10 @@ int main(void)
 		glm::vec3(1,0,0),
 		glm::radians(90.0f)
 		);
+*/
 
+	Bamboo bamboo;
+	bamboo.initialize();
 
 
 	//Building my_building;
@@ -2513,8 +2553,8 @@ int main(void)
 		//glDepthMask(GL_FALSE);
 		my_sky_box.render(vp,lightSpaceMatrix);
 		//glDepthMask(GL_TRUE);
-		tree.render(vp);
-		tree2.render(vp);
+		bamboo.render(vp);
+		//tree2.render(vp);
 		my_bird.render(vp);
 
 		//my_building.render(vp,lightSpaceMatrix);
@@ -2554,7 +2594,7 @@ int main(void)
 	my_sky_box.cleanup();
 	my_building.cleanup();
 	my_bird.cleanup();
-	tree.cleanup();
+	bamboo.cleanup();
 
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
