@@ -347,6 +347,9 @@ struct Building {
 	GLuint shadowMapID;
 	GLuint lightDirectionID;
 	GLuint modelID;
+	GLuint textureSkyboxSamplerID;
+	GLuint SkyboxtextureID;
+	GLuint CameraPositionID;
 
 	void initialize(glm::vec3 position, glm::vec3 scale) {
 		// Define scale of the building geometry
@@ -418,6 +421,16 @@ struct Building {
 		BuildingtextureID = LoadTextureTileBox("../finalProject3/test.jpg");
 		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
 
+		CameraPositionID = glGetUniformLocation(BuildingprogramID, "cameraPosition");
+
+
+
+		SkyboxtextureID = LoadTextureTileBox("../finalProject3/lac.png");
+
+		// TODO: Get a handle to texture sampler
+		// -------------------------------------
+		textureSkyboxSamplerID = glGetUniformLocation(BuildingprogramID,"SkyboxSampler");
+
 		depthProgramID = LoadShadersFromFile("../finalProject3/depth.vert", "../finalProject3/depth.frag");
 		if (depthProgramID == 0) {
 			std::cerr << "Failed to load depth shaders." << std::endl;
@@ -430,9 +443,17 @@ struct Building {
 	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
 		glUseProgram(BuildingprogramID);
 
+		//GLuint instanceMatrixLocation = glGetAttribLocation(BuildingprogramID, "instanceModelMatrix");
 
+
+		/*
 		glBindVertexArray(vertexArrayID);
 
+		GLuint instanceVBO;
+		glGenBuffers(1, &instanceVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * modelMatrices.size(), &modelMatrices[0], GL_STATIC_DRAW());
+*/
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -444,6 +465,12 @@ struct Building {
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		for (GLuint i = 0; i < 4; i++) {
+			glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));
+			glEnableVertexAttribArray(3 + i);
+			glVertexAttribDivisor(3 + i, 1); // Chaque instance a sa propre matrice
+		}
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
@@ -466,6 +493,10 @@ struct Building {
 		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
 		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
+		glUniform3fv(CameraPositionID, 1, &eye_center[0]);
+
+
+
 
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -482,6 +513,10 @@ struct Building {
 		glBindTexture(GL_TEXTURE_2D, BuildingtextureID);
 		glUniform1i(textureBuildingSamplerID, 0);
 
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, SkyboxtextureID);
+		glUniform1i(textureSkyboxSamplerID, 3);
+
 
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
 		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
@@ -489,12 +524,15 @@ struct Building {
 		// ------------------------------------------
 
 		// Draw the box
+		//glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, modelMatrices.size());
+
 		glDrawElements(
 			GL_TRIANGLES,      // mode
 			36,    			   // number of indices
 			GL_UNSIGNED_INT,   // type
 			(void*)0           // element array buffer offset
 		);
+
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
@@ -771,7 +809,7 @@ struct SkyBox {
 
 
 
-		SkyboxtextureID = LoadTextureTileBox("../finalProject3/StandardCubeMap.png");
+		SkyboxtextureID = LoadTextureTileBox("../finalProject3/lac.png");
 
         // TODO: Get a handle to texture sampler
         // -------------------------------------
@@ -1538,6 +1576,307 @@ struct Bird {
 };
 
 
+struct MyBot {
+
+	glm::vec3 position;
+	glm::vec3 scale;
+	glm::vec3 axis;
+	float angle;
+	// Shader variable IDs
+	GLuint mvpMatrixID;
+	GLuint jointMatricesID;
+	GLuint lightPositionID;
+	GLuint lightIntensityID;
+	GLuint programID;
+	GLuint textureID;
+	GLuint textureSamplerID;
+
+
+	tinygltf::Model model;
+
+	// Each VAO corresponds to each mesh primitive in the GLTF model
+	struct PrimitiveObject {
+		GLuint vao;
+		std::map<int, GLuint> vbos;
+	};
+	std::vector<PrimitiveObject> primitiveObjects;
+
+
+	glm::mat4 getNodeTransform(const tinygltf::Node& node) {
+		glm::mat4 transform(1.0f);
+
+		if (node.matrix.size() == 16) {
+			transform = glm::make_mat4(node.matrix.data());
+		} else {
+			if (node.translation.size() == 3) {
+				transform = glm::translate(transform, glm::vec3(node.translation[0], node.translation[1], node.translation[2]));
+			}
+			if (node.rotation.size() == 4) {
+				glm::quat q(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
+				transform *= glm::mat4_cast(q);
+			}
+			if (node.scale.size() == 3) {
+				transform = glm::scale(transform, glm::vec3(node.scale[0], node.scale[1], node.scale[2]));
+			}
+		}
+		return transform;
+	}
+
+
+
+
+
+
+
+
+
+
+	bool loadModel(tinygltf::Model &model, const char *filename) {
+		tinygltf::TinyGLTF loader;
+		std::string err;
+		std::string warn;
+
+		bool res = loader.LoadASCIIFromFile(&model, &err, &warn, filename);
+		if (!warn.empty()) {
+			std::cout << "WARN: " << warn << std::endl;
+		}
+
+		if (!err.empty()) {
+			std::cout << "ERR: " << err << std::endl;
+		}
+
+		if (!res)
+			std::cout << "Failed to load glTF: " << filename << std::endl;
+		else
+			std::cout << "Loaded glTF: " << filename << std::endl;
+
+		return res;
+	}
+
+	void initialize(glm::vec3 position, glm::vec3 scale,glm::vec3 axis, float angle) {
+		this->position = position;
+		this->scale = scale;
+		this->axis = axis;
+		this->angle = angle;
+		// Modify your path if neede
+		// d
+		if (!loadModel(model, "../finalProject3/bot/bird.gltf")) {
+			return;
+		}
+
+		// Prepare buffers for rendering
+		primitiveObjects = bindModel(model);
+
+
+		// Create and compile our GLSL program from the shaders
+		programID = LoadShadersFromFile("../finalProject3/bot2.vert", "../finalProject3/bot2.frag");
+		if (programID == 0)
+		{
+			std::cerr << "Failed to load shaders." << std::endl;
+		}
+
+		// Get a handle for GLSL variables
+		mvpMatrixID = glGetUniformLocation(programID, "MVP");
+		lightPositionID = glGetUniformLocation(programID, "lightPosition");
+		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
+		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
+
+		glActiveTexture(GL_TEXTURE1);
+
+		// Load a texture
+		textureID = LoadTextureTileBox("../finalProject3/Tex_Ride_FengHuang_01a_D_A.tga.png");
+
+		// Get a handle for our "textureSampler" uniform
+		textureSamplerID = glGetUniformLocation(programID,"textureSampler");
+
+		// Ensure no VAO or shader program is left active
+		glBindVertexArray(0);  // Unbind any VAO
+		glUseProgram(0);       // Unbind any shader program
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+	}
+
+	void bindMesh(std::vector<PrimitiveObject> &primitiveObjects,
+				tinygltf::Model &model, tinygltf::Mesh &mesh) {
+
+		std::map<int, GLuint> vbos;
+		for (size_t i = 0; i < model.bufferViews.size(); ++i) {
+			const tinygltf::BufferView &bufferView = model.bufferViews[i];
+
+			int target = bufferView.target;
+
+			if (bufferView.target == 0) {
+				// The bufferView with target == 0 in our model refers to
+				// the skinning weights, for 25 joints, each 4x4 matrix (16 floats), totaling to 400 floats or 1600 bytes.
+				// So it is considered safe to skip the warning.
+				//std::cout << "WARN: bufferView.target is zero" << std::endl;
+				continue;
+			}
+
+			const tinygltf::Buffer &buffer = model.buffers[bufferView.buffer];
+			GLuint vbo;
+			glGenBuffers(1, &vbo);
+			glBindBuffer(target, vbo);
+			glBufferData(target, bufferView.byteLength,
+						&buffer.data.at(0) + bufferView.byteOffset, GL_STATIC_DRAW);
+
+			vbos[i] = vbo;
+		}
+
+		// Each mesh can contain several primitives (or parts), each we need to
+		// bind to an OpenGL vertex array object
+		for (size_t i = 0; i < mesh.primitives.size(); ++i) {
+
+			tinygltf::Primitive primitive = mesh.primitives[i];
+			tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
+			GLuint vao;
+			glGenVertexArrays(1, &vao);
+			glBindVertexArray(vao);
+
+			for (auto &attrib : primitive.attributes) {
+				tinygltf::Accessor accessor = model.accessors[attrib.second];
+				int byteStride =
+					accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+				glBindBuffer(GL_ARRAY_BUFFER, vbos[accessor.bufferView]);
+
+				int size = 1;
+				if (accessor.type != TINYGLTF_TYPE_SCALAR) {
+					size = accessor.type;
+				}
+
+				int vaa = -1;
+				if (attrib.first.compare("POSITION") == 0) vaa = 0;
+				if (attrib.first.compare("NORMAL") == 0) vaa = 1;
+				if (attrib.first.compare("TEXCOORD_0") == 0) vaa = 2;
+				if (attrib.first.compare("JOINTS_0") == 0) vaa = 3;
+				if (attrib.first.compare("WEIGHTS_0") == 0) vaa = 4;
+				if (vaa > -1) {
+					glEnableVertexAttribArray(vaa);
+					glVertexAttribPointer(vaa, size, accessor.componentType,
+										accessor.normalized ? GL_TRUE : GL_FALSE,
+										byteStride, BUFFER_OFFSET(accessor.byteOffset));
+				} else {
+					std::cout << "vaa missing: " << attrib.first << std::endl;
+				}
+			}
+
+			// Record VAO for later use
+			PrimitiveObject primitiveObject;
+			primitiveObject.vao = vao;
+			primitiveObject.vbos = vbos;
+			primitiveObjects.push_back(primitiveObject);
+
+			glBindVertexArray(0);
+		}
+	}
+
+	void bindModelNodes(std::vector<PrimitiveObject> &primitiveObjects,
+						tinygltf::Model &model,
+						tinygltf::Node &node) {
+		// Bind buffers for the current mesh at the node
+		if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+			bindMesh(primitiveObjects, model, model.meshes[node.mesh]);
+		}
+
+		// Recursive into children nodes
+		for (size_t i = 0; i < node.children.size(); i++) {
+			assert((node.children[i] >= 0) && (node.children[i] < model.nodes.size()));
+			bindModelNodes(primitiveObjects, model, model.nodes[node.children[i]]);
+		}
+	}
+
+	std::vector<PrimitiveObject> bindModel(tinygltf::Model &model) {
+		std::vector<PrimitiveObject> primitiveObjects;
+
+		const tinygltf::Scene &scene = model.scenes[model.defaultScene];
+		for (size_t i = 0; i < scene.nodes.size(); ++i) {
+			assert((scene.nodes[i] >= 0) && (scene.nodes[i] < model.nodes.size()));
+			bindModelNodes(primitiveObjects, model, model.nodes[scene.nodes[i]]);
+		}
+
+		return primitiveObjects;
+	}
+
+	void drawMesh(const std::vector<PrimitiveObject> &primitiveObjects,
+				tinygltf::Model &model, tinygltf::Mesh &mesh) {
+
+		for (size_t i = 0; i < mesh.primitives.size(); ++i)
+		{
+			GLuint vao = primitiveObjects[i].vao;
+			std::map<int, GLuint> vbos = primitiveObjects[i].vbos;
+
+			glBindVertexArray(vao);
+
+			tinygltf::Primitive primitive = mesh.primitives[i];
+			tinygltf::Accessor indexAccessor = model.accessors[primitive.indices];
+
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
+
+			glDrawElements(primitive.mode, indexAccessor.count,
+						indexAccessor.componentType,
+						BUFFER_OFFSET(indexAccessor.byteOffset));
+
+			glBindVertexArray(0);
+		}
+	}
+
+	void drawModelNodes(const std::vector<PrimitiveObject>& primitiveObjects,
+						tinygltf::Model &model, tinygltf::Node &node) {
+		// Draw the mesh at the node, and recursively do so for children nodes
+		if ((node.mesh >= 0) && (node.mesh < model.meshes.size())) {
+			drawMesh(primitiveObjects, model, model.meshes[node.mesh]);
+		}
+		for (size_t i = 0; i < node.children.size(); i++) {
+			drawModelNodes(primitiveObjects, model, model.nodes[node.children[i]]);
+		}
+	}
+	void drawModel(const std::vector<PrimitiveObject>& primitiveObjects,
+				tinygltf::Model &model) {
+		// Draw all nodes
+		const tinygltf::Scene &scene = model.scenes[model.defaultScene];
+		for (size_t i = 0; i < scene.nodes.size(); ++i) {
+			drawModelNodes(primitiveObjects, model, model.nodes[scene.nodes[i]]);
+		}
+	}
+
+	void render(glm::mat4 cameraMatrix) {
+		glUseProgram(programID);
+
+		glm::mat4 modelMatrix = glm::mat4();
+		modelMatrix = glm::scale(modelMatrix, scale);
+		modelMatrix = glm::rotate(modelMatrix, angle, axis);
+		modelMatrix = glm::translate(modelMatrix, position);
+		// Set camera
+		glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+
+		// -----------------------------------------------------------------
+		// TODO: Set animation data for linear blend skinning in shader
+
+		// -----------------------------------------------------------------
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glUniform1i(textureSamplerID, 1);
+
+		// Set light data
+		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+
+		// Draw the GLTF model
+		drawModel(primitiveObjects, model);
+	}
+
+	void cleanup() {
+		glDeleteProgram(programID);
+	}
+};
+
 
 int main(void)
 {
@@ -1622,6 +1961,7 @@ int main(void)
 	glm::vec3(1,1,1),glm::vec3(0,0,1),glm::radians(45.0f)
 					);
 */
+	/*
 	Bird bot;
 	bot.initialize(glm::vec3(0,3000,1000),
 		glm::vec3(1,1,1),
@@ -1629,10 +1969,42 @@ int main(void)
 		glm::radians(45.0f)
 		);
 
+
+
+	std::vector<glm::mat4> modelMatrices;
+	std::vector<glm::vec3> positions = {
+		glm::vec3(-4000.0f, 1000.0f, -5000.0f),
+		glm::vec3(4000.0f, 1000.0f, 5000.0f),
+		glm::vec3(4000.0f, -9000.0f, 5000.0f)
+	};
+
+	std::vector<glm::vec3> scales = {
+		glm::vec3(1000.0f, 1000.0f, 1000.0f),
+		glm::vec3(1000.0f, 2000.0f, 1000.0f),
+		glm::vec3(1000.0f, 5000.0f, 1000.0f)
+	};
+	*/
+
+	MyBot bot;
+	bot.initialize(glm::vec3(0,3000,1000),
+		glm::vec3(1,1,1),glm::vec3(1,0,0),glm::radians(45.0f)
+		);
+
+
 	Building my_building;
-	my_building.initialize(glm::vec3(4000.0f,  1000.0f, 5000.0f),
-							glm::vec3(500.0f, 1000.0f, 500.0f)
-							);
+	my_building.initialize(glm::vec3(3000,1000,4000),glm::vec3(1000,3000,1000));
+
+
+	/*
+	for (size_t i = 0; i < positions.size(); ++i) {
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, positions[i]);
+		model = glm::scale(model, scales[i]);
+		modelMatrices.push_back(model);
+	}
+
+*/
+
 
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
@@ -1711,6 +2083,8 @@ int main(void)
 		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
+		/*
+
 		double currentTime = glfwGetTime();
 		float deltaTime = float(currentTime - lastTime);
 		lastTime = currentTime;
@@ -1719,16 +2093,17 @@ int main(void)
 			time += deltaTime * playbackSpeed;
 			bot.update(time);
 		}
-
+*/
 		//glDepthMask(GL_FALSE);
 		my_sky_box.render(vp,lightSpaceMatrix);
 		//glDepthMask(GL_TRUE);
 		bot.render(vp);
+
 		my_building.render(vp,lightSpaceMatrix);
 
 
 
-
+/*
 		frames++;
 		fTime += deltaTime;
 		if (fTime > 2.0f) {
@@ -1742,7 +2117,7 @@ int main(void)
 		}
 
 
-
+*/
 
 		if (saveDepth) {
 			std::string filename = "../finalProject3/depth_camera.png";

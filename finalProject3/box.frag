@@ -15,6 +15,9 @@ uniform vec3 lightIntensity;
 uniform vec3 lightDirection;
 uniform mat4 lightSpaceMatrix;
 uniform sampler2D shadowMap;
+uniform vec3 cameraPosition;
+
+uniform samplerCube SkyboxSampler;
 
 out vec3 finalColor;
 
@@ -24,13 +27,24 @@ void main()
     vec3 lightDir = normalize(-lightDirection);
 
 
-    float cosTheta = dot(normal, lightDir);
+    float cosTheta = max(dot(normal, lightDir),0);
+
+
+    vec3 ambientColor2 = 50 * vec3(0.1, 0.1, 0.1);
+
+    vec3 viewDir = normalize(cameraPosition - fragPos.xyz);
+    vec3 reflectDir = reflect(-lightDirection, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);  // Phong specular
+    vec3 specularColor = vec3(1.0, 1.0, 1.0);  // Valeur fixe pour l'éclairage spéculaire
+
 
     vec3 irradiance = lightIntensity;
 
     vec3 diffuse = color * cosTheta * irradiance;
 
-    vec3 colorAfterToneMapping = diffuse / (1 + diffuse);
+    vec3 combinedColor = diffuse + ambientColor2;
+
+    vec3 colorAfterToneMapping = combinedColor / (1 + combinedColor);
 
     float gamma =  2.2;
 
@@ -55,7 +69,8 @@ void main()
     }
 
 
-    finalColor =  texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
+    //finalColor =  texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
     //finalColor = normalize(worldNormal) * 0.5 + 0.5; // [-1, 1] -> [0, 1]
-    // TODO: texture lookup.
+    finalColor = (gammaCorrectedColor + spec * specularColor) * texture(buildingSampler, uv).rgb * shadow;
+
 }
