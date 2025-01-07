@@ -17,7 +17,6 @@ uniform mat4 lightSpaceMatrix;
 uniform sampler2D shadowMap;
 uniform vec3 cameraPosition;
 
-uniform samplerCube SkyboxSampler;
 
 out vec3 finalColor;
 
@@ -72,5 +71,5 @@ void main()
     //finalColor =  texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
     //finalColor = normalize(worldNormal) * 0.5 + 0.5; // [-1, 1] -> [0, 1]
     finalColor = (gammaCorrectedColor + spec * specularColor) * texture(buildingSampler, uv).rgb * shadow;
-
+    //finalColor = vec3(1.0, 0.0, 0.0);
 }

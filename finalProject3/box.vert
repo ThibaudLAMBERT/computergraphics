@@ -5,7 +5,9 @@ layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexColor;
 layout(location = 2) in vec3 vertexNormal;
 layout(location = 3) in vec2 vertexUV;
-layout(location = 4) in mat4 instanceModelMatrix;
+layout(location = 4) in vec3 Position;
+layout(location = 5) in vec3 Scale;
+
 
 // Output data, to be interpolated for each fragment
 out vec3 worldPosition;
@@ -24,8 +26,17 @@ uniform mat4 lightSpaceMatrix;
 
 void main() {
 
+    //Creation of the model matrix
+    mat4 model = mat4(1.0);
+    model[3] = vec4(Position, 1.0); // Translation
+    model[0][0] = model[0][0] * Scale.x;
+    model[1][1] = model[1][1] * Scale.y;
+    model[2][2] = model[2][2] * Scale.z;
+
+
+
     // Transform vertex
-    gl_Position =  MVP * vec4(vertexPosition, 1);
+    gl_Position =  MVP * model * vec4(vertexPosition, 1);
 
     // Pass vertex color to the fragment shader
     color = vertexColor;
@@ -40,5 +51,5 @@ void main() {
     // TODO: Pass UV to the fragment shader
     uv = vertexUV;
 
-    fragPos = lightSpaceMatrix * vec4(vertexPosition, 1.0);
+    fragPos = lightSpaceMatrix * model * vec4(vertexPosition, 1.0);
 }

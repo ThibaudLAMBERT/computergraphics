@@ -938,6 +938,426 @@ struct SkyBox {
 };
 
 
+struct Instance {
+	glm::vec3 position;
+	glm::vec3 scale;
+};
+
+
+std::vector<Instance> Test {
+	    {glm::vec3(8000.0f, -10000.0f, 8000.0f), glm::vec3(1000.0f, 3000.0f, 1000.0f)},
+		{glm::vec3(-8000.0f, 0.0f, -8000.0f), glm::vec3(1000.0f, 3000.0f, 1000.0f)},
+		{glm::vec3(-8000.0f, 0.0f, 0.0f), glm::vec3(1000.0f, 3000.0f, 1000.0f)},
+	};
+
+
+struct BuildingInstancing2 {
+
+
+	GLfloat vertex_buffer_data[72] = {	// Vertex definition for a canonical box
+
+		// Front face
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+
+		// Back face
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+
+		// Left face
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
+
+		// Right face
+		1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f,
+
+		// Top face
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+
+		// Bottom face
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
+	};
+
+	GLfloat color_buffer_data[72] = {
+		// Front, red
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		// Back, yellow
+		1.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+
+		// Left, green
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		// Right, cyan
+		0.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 1.0f,
+		0.0f, 1.0f, 1.0f,
+
+		// Top, blue
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+
+		// Bottom, magenta
+		1.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+	};
+
+
+
+	GLuint index_buffer_data[36] = {		// 12 triangle faces of a box
+		0, 1, 2,
+		0, 2, 3,
+
+		4, 5, 6,
+		4, 6, 7,
+
+		8, 9, 10,
+		8, 10, 11,
+
+		12, 13, 14,
+		12, 14, 15,
+
+		16, 17, 18,
+		16, 18, 19,
+
+		20, 21, 22,
+		20, 22, 23,
+	};
+
+    // TODO: Define UV buffer data
+    // ---------------------------
+    // ---------------------------
+	GLfloat uv_buffer_data[48] = {
+		// Front
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+				// Back
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+				 // Left
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+				 // Right
+		0.0f, 1.0f,
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		// Top - we do not want texture the top
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		 // Bottom - we do not want texture the bottom
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+	};
+
+	GLfloat normal_buffer_data[72] = {
+		// Front
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+
+		// Back
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+
+		// Left
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+
+		// Right
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		// Top
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		// Bottom
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+	};
+
+
+
+	// OpenGL buffers
+	GLuint vertexArrayID;
+	GLuint vertexBufferID;
+	GLuint indexBufferID;
+	GLuint colorBufferID;
+	GLuint uvBufferID;
+	GLuint BuildingtextureID;
+	GLuint normalBufferID;
+	GLuint instanceBufferID;
+
+	// Shader variable IDs
+	GLuint mvpMatrixID;
+	GLuint textureBuildingSamplerID;
+	GLuint BuildingprogramID;
+	GLuint depthmvpMatrixID;
+	GLuint lightPositionID;
+	GLuint lightIntensityID;
+	GLuint depthProgramID;
+	GLuint lightmvpMatrixID;
+	GLuint shadowMapID;
+	GLuint lightDirectionID;
+	GLuint modelID;
+
+	void initialize() {
+
+		// Create a vertex array object
+		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f;
+		glGenVertexArrays(1, &vertexArrayID);
+		glBindVertexArray(vertexArrayID);
+
+		// Create a vertex buffer object to store the vertex data
+		glGenBuffers(1, &vertexBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
+
+		// Create a vertex buffer object to store the color data
+        // TODO:
+		glGenBuffers(1, &colorBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
+
+
+
+
+		glGenBuffers(1, &uvBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
+		// --------------------------------------------------------
+		// --------------------------------------------------------
+		glGenBuffers(1, &normalBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
+
+		// Create an index buffer object to store the index data that defines triangle faces
+		glGenBuffers(1, &indexBufferID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_buffer_data), index_buffer_data, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &instanceBufferID);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
+		glBufferData(GL_ARRAY_BUFFER, Test.size() * sizeof(Instance), Test.data(), GL_STATIC_DRAW);
+
+		glBindVertexArray(0);
+
+		// Create and compile our GLSL program from the shaders
+		BuildingprogramID = LoadShadersFromFile("../finalProject3/box.vert", "../finalProject3/box.frag");
+		if (BuildingprogramID == 0)
+		{
+			std::cerr << "Failed to load shaders." << std::endl;
+		}
+
+
+
+
+		// Get a handle for our "MVP" uniform
+		mvpMatrixID = glGetUniformLocation(BuildingprogramID, "MVP");
+		lightPositionID = glGetUniformLocation(BuildingprogramID, "lightPosition");
+		lightIntensityID = glGetUniformLocation(BuildingprogramID, "lightIntensity");
+		lightDirectionID = glGetUniformLocation(BuildingprogramID, "lightDirection");
+
+
+
+		lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
+		shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
+
+		BuildingtextureID = LoadTextureTileBox("../finalProject3/test.jpg");
+		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
+
+		depthProgramID = LoadShadersFromFile("../finalProject3/box_depth.vert", "../finalProject3/box_depth.frag");
+		if (depthProgramID == 0) {
+			std::cerr << "Failed to load depth shaders." << std::endl;
+		}
+
+		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
+	}
+
+	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
+		glUseProgram(BuildingprogramID);
+
+
+		glBindVertexArray(vertexArrayID);
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(2);
+		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+
+
+        // -----------------------
+
+		// Set model-view-projection matrix
+		glm::mat4 mvp = cameraMatrix;
+		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
+
+		glm::mat4 lightmvp = lightSpaceMatrix;
+
+		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, depthTexture);
+		glUniform1i(shadowMapID, 2);
+
+
+		// TODO: Enable UV buffer and texture sampler
+		// ------------------------------------------
+		glEnableVertexAttribArray(3);
+		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, 0);
+		// Set textureSampler to use texture unit 0
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, BuildingtextureID);
+		glUniform1i(textureBuildingSamplerID, 0);
+
+		glEnableVertexAttribArray(4);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
+		glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)0);
+		glVertexAttribDivisor(4, 1);
+
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)offsetof(Instance, scale));
+		glVertexAttribDivisor(5, 1);
+
+		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
+		glUniform3fv(lightDirectionID, 1, &lightDirection[0]);
+		// ------------------------------------------
+
+		// Draw the box
+		glDrawElementsInstanced(
+			GL_TRIANGLES,      // mode
+			36,    			   // number of indices
+			GL_UNSIGNED_INT,   // type
+			0,
+			Test.size()// element array buffer offset
+		);
+
+		glDisableVertexAttribArray(0);
+		glDisableVertexAttribArray(1);
+		glDisableVertexAttribArray(2);
+
+		glBindVertexArray(0);
+	}
+	void render_depth(glm::mat4 lightSpaceMatrix) {
+
+		glUseProgram(depthProgramID);
+
+		glBindVertexArray(vertexArrayID);
+
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)0);
+		glVertexAttribDivisor(1, 1);
+
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), (void*)offsetof(Instance, scale));
+		glVertexAttribDivisor(2, 1);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+
+		// Set light-space matrix
+
+
+		glm::mat4 mvpLight = lightSpaceMatrix;
+
+		glUniformMatrix4fv(depthmvpMatrixID, 1, GL_FALSE, &mvpLight[0][0]);
+
+		// Draw the box
+		glDrawElementsInstanced(
+			GL_TRIANGLES,      // mode
+			36,    			   // number of indices
+			GL_UNSIGNED_INT,   // type
+			0,
+			Test.size()// element array buffer offset
+		);
+
+		glDisableVertexAttribArray(0);
+
+		glBindVertexArray(0);
+	}
+	void cleanup() {
+		glDeleteBuffers(1, &vertexBufferID);
+		glDeleteBuffers(1, &colorBufferID);
+		glDeleteBuffers(1, &indexBufferID);
+		glDeleteVertexArrays(1, &vertexArrayID);
+		glDeleteBuffers(1, &normalBufferID);
+		glDeleteBuffers(1, &uvBufferID);
+		glDeleteTextures(1, &textureBuildingSamplerID);
+		glDeleteTextures(1, &BuildingtextureID);
+		glDeleteProgram(BuildingprogramID);
+		glDeleteProgram(depthProgramID);
+	}
+};
 
 
 struct Bird {
@@ -1952,9 +2372,9 @@ int main(void)
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
 
 	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LESS);
+	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
+	glCullFace(GL_BACK);
 /*
 	MyBot bot;
 	bot.initialize(glm::vec3(0,2000,-1000),
@@ -1991,8 +2411,11 @@ int main(void)
 		);
 
 
-	Building my_building;
-	my_building.initialize(glm::vec3(3000,1000,4000),glm::vec3(1000,3000,1000));
+	//Building my_building;
+	//my_building.initialize(glm::vec3(3000,1000,4000),glm::vec3(1000,3000,1000));
+
+	BuildingInstancing2 my_building;
+	my_building.initialize();
 
 
 	/*
