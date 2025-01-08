@@ -1,11 +1,14 @@
 #version 330 core
 
+// Input variables
 in vec3 worldPosition;
 in vec3 worldNormal;
 in vec2 textCoords;
 
+// Output variable
 out vec3 finalColor;
 
+// Uniform variables
 uniform vec3 lightPosition2;
 uniform vec3 lightIntensity2;
 uniform sampler2D textureSampler;

@@ -1,6 +1,6 @@
 #version 330 core
 
-// Input
+// Input variables
 layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexNormal;
 layout(location = 2) in vec2 vertexUV;
@@ -12,10 +12,12 @@ out vec3 worldPosition;
 out vec3 worldNormal;
 out vec2 textCoords;
 
+// Uniform variable
 uniform mat4 MVP;
 
 void main() {
 
+    // Creationf od model matrix
     mat4 model = mat4(1.0);
     model[3] = vec4(Position, 1.0); // Translation
     model[0][0] = model[0][0] * Scale.x;

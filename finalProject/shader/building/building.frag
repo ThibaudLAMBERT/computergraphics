@@ -1,14 +1,13 @@
 #version 330 core
 
+// Input variables
 in vec3 color;
 in vec2 uv;
 in vec3 worldPosition;
 in vec3 worldNormal;
 in vec4 fragPos;
 
-// TODO: To add UV input to this fragment shader
-
-// TODO: To add the texture sampler
+// Uniform variables
 uniform sampler2D buildingSampler;
 uniform vec3 lightPosition;
 uniform vec3 lightIntensity;
@@ -17,38 +16,34 @@ uniform mat4 lightSpaceMatrix;
 uniform sampler2D shadowMap;
 uniform vec3 cameraPosition;
 
-
+// Output variable
 out vec3 finalColor;
 
 void main()
 {
+    // Diffuse lighting
     vec3 normal = normalize(worldNormal);
     vec3 lightDir = normalize(-lightDirection);
-
-
     float cosTheta = max(dot(normal, lightDir),0);
+    vec3 irradiance = lightIntensity;
+    vec3 diffuse = color * cosTheta * irradiance;
 
-
+    // Ambient lighting
     vec3 ambientColor = 50 * vec3(0.01, 0.01, 0.01);
 
+    // Combined lighting
+    vec3 combinedColor = diffuse + ambientColor;
+    vec3 colorAfterToneMapping = combinedColor / (1 + combinedColor);
+    float gamma =  2.2;
+    vec3 gammaCorrectedColor = pow(colorAfterToneMapping, vec3 (1/gamma));
+
+    // Specular lighting
     vec3 viewDir = normalize(cameraPosition - fragPos.xyz);
     vec3 reflectDir = reflect(-lightDirection, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     vec3 specularColor = vec3(0.1, 0.1, 0.1) * 0.2f;
 
-    vec3 irradiance = lightIntensity;
-
-    vec3 diffuse = color * cosTheta * irradiance;
-
-    vec3 combinedColor = diffuse + ambientColor;
-
-    vec3 colorAfterToneMapping = combinedColor / (1 + combinedColor);
-
-    float gamma =  2.2;
-
-    vec3 gammaCorrectedColor = pow(colorAfterToneMapping, vec3 (1/gamma));
-
-
+    // Shadow mapping
     vec4 shadowCoord = fragPos/ fragPos.w;
     shadowCoord = shadowCoord * 0.5 + 0.5;
 
@@ -66,9 +61,7 @@ void main()
 
     }
 
-
-    //finalColor =  texture(buildingSampler, uv).rgb * gammaCorrectedColor * shadow;
-    //finalColor = normalize(worldNormal) * 0.5 + 0.5; // [-1, 1] -> [0, 1]
+    // Final color
     finalColor = (gammaCorrectedColor + spec * specularColor) * texture(buildingSampler, uv).rgb * shadow;
-    //finalColor = vec3(1.0, 0.0, 0.0);
+
 }

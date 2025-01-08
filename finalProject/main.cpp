@@ -11,8 +11,6 @@
 #include <tiny_gltf.h>
 #include <../finalProject/render/shader.h>
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#include <stb/stb_image.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -20,28 +18,23 @@
 #include <iostream>
 #include <random>
 #define _USE_MATH_DEFINES
-#include <math.h>
-//#define STB_IMAGE_WRITE_IMPLEMENTATION
-//#include <stb/stb_image_write.h>
-
 
 #include <iomanip>
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-
+//Declaration of a GLFW window
 static GLFWwindow *window;
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
-static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
+// Callback function to handle keyboard input events
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
+
+// Controls for animation
 static bool playAnimation = true;
 static float playbackSpeed = 0.5f;
 
 
-
-// OpenGL camera view parameters
-//static glm::vec3 eye_center;
-
+// Camera parameters
 static glm::vec3 eye_center;
 static glm::vec3 lookat(0, 0, -1);
 static glm::vec3 up(0, 1, 0);
@@ -49,27 +42,19 @@ float cameraSpeed = 100.0f;
 float yaw = -90.0f;
 float pitch = 0.0f;
 
+// Parameters for directional light (sun)
 const glm::vec3 wave500(0.0f, 255.0f, 146.0f);
 const glm::vec3 wave600(255.0f, 190.0f, 0.0f);
 const glm::vec3 wave700(205.0f, 0.0f, 0.0f);
-
 static glm::vec3 lightIntensity = (8.0f * wave500 + 15.6f * wave600 + 18.4f * wave700);
-static glm::vec3 light_lookat(0.0f, -1.0f, 0.0f);
 static glm::vec3 lightDirection (-1.0f, -1.0f, -1.0f);
 static glm::vec3 lightPosition(9900,9900,9900);
 
-// Lighting
-static glm::vec3 lightIntensity2(5e6f, 5e6f, 5e6f);
+// Parameters for bamboo light
+static glm::vec3 lightIntensity2(3e5f, 3e5f, 3e5f);
 static glm::vec3 lightPosition2(-275.0f, 500.0f, 800.0f);
 
-static glm::vec3 lightIntensity3(3e5f, 3e5f, 3e5f);
-static glm::vec3 lightPosition3(-275.0f, 500.0f, 800.0f);
-
-static glm::vec3 Position(0,0,0);
-static glm::vec3 Target = Position + lightDirection;
-
-
-
+// Parameters for light projection matrix
 float orthoLeft = -17000.0f;
 float orthoRight = 17000.0f;
 float orthoBottom = -17000.0f;
@@ -78,16 +63,11 @@ float orthoNear = 10.0f;
 float orthoFar = 50000.0f;
 
 
-static float depthFoV = 80.f;
-static float depthNear = 100.f;
-static float depthFar = 10000.f;
-
-
-static glm::vec3 lightUp(0, 1, 0);
+// Shadow map size
 static int shadowMapWidth = 1024;
 static int shadowMapHeight = 768;
 
-
+// Declaration for shadow
 GLuint fbo;
 GLuint depthTexture;
 
@@ -96,11 +76,14 @@ static float viewAzimuth = 0.f;
 static float viewPolar = 0.f;
 static float viewDistance = -15.0f;
 
+// Window size
 static int windowWidth = 1024;
 static int windowHeight = 768;
 
+
 static bool saveDepth = true;
 
+// Save a picture of the depth texture (debugging help)
 static void saveDepthTexture(GLuint fbo, std::string filename) {
 	int width = shadowMapWidth;
 	int height = shadowMapHeight;
@@ -123,6 +106,7 @@ static void saveDepthTexture(GLuint fbo, std::string filename) {
 
 }
 
+// Load a texture for mapping
 static GLuint LoadTextureTileBox(const char *texture_file_path) {
     int w, h, channels;
     uint8_t* img = stbi_load(texture_file_path, &w, &h, &channels, 3);
@@ -149,21 +133,25 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 
-struct Instance_tree {
+// Structure for bamboo transformation
+struct Instance_bamboo {
 	glm::vec3 position;
 	glm::vec3 scale;
 };
 
-std::vector<Instance_tree> Transform_tree;
+// Creation of a vector containing bamboo transformation
+std::vector<Instance_bamboo> Transform_tree;
 
 
+// Building structure
 struct Building {
 	glm::vec3 position;		// Position of the box
-	glm::vec3 scale;
-	glm::vec3 axis;
-	float angle;
+	glm::vec3 scale;		// Scale of the box
+	glm::vec3 axis;			// Axis of rotation
+	float angle;			// Angle of rotation
 
-	GLfloat vertex_buffer_data[72] = {	// Vertex definition for a canonical box
+	// Vertex definition for a canonical box
+	GLfloat vertex_buffer_data[72] = {
 
 		// Front face
 		-1.0f, -1.0f, 1.0f,
@@ -202,6 +190,7 @@ struct Building {
 		-1.0f, -1.0f, 1.0f,
 	};
 
+	// Color definition
 	GLfloat color_buffer_data[72] = {
 		// Front, red
 		1.0f, 0.0f, 0.0f,
@@ -241,8 +230,8 @@ struct Building {
 	};
 
 
-
-	GLuint index_buffer_data[36] = {		// 12 triangle faces of a box
+	// Triangle faces of a box
+	GLuint index_buffer_data[36] = {
 		0, 1, 2,
 		0, 2, 3,
 
@@ -262,26 +251,28 @@ struct Building {
 		20, 22, 23,
 	};
 
-    // TODO: Define UV buffer data
-    // ---------------------------
-    // ---------------------------
+	// UV buffer for mapping
 	GLfloat uv_buffer_data[48] = {
+
 		// Front
 		0.0f, 1.0f,
 		1.0f, 1.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,
-				// Back
+
+		// Back
 		0.0f, 1.0f,
 		1.0f, 1.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,
-				 // Left
+
+		// Left
 		0.0f, 1.0f,
 		1.0f, 1.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,
-				 // Right
+
+		// Right
 		0.0f, 1.0f,
 		1.0f, 1.0f,
 		1.0f, 0.0f,
@@ -299,6 +290,7 @@ struct Building {
 		0.0f, 0.0f,
 	};
 
+	// Normal buffer for lighting
 	GLfloat normal_buffer_data[72] = {
 		// Front
 		0.0f, 0.0f, 1.0f,
@@ -361,15 +353,18 @@ struct Building {
 	GLuint lightDirectionID;
 	GLuint modelID;
 
+	// Initialize function
 	void initialize(glm::vec3 position, glm::vec3 scale,glm::vec3 axis, float angle) {
-		// Define scale of the building geometry
-		this->position = position;
-		this->scale = scale;
-		this->axis = axis;
-		this->angle = angle;
+
+		this->position = position;	// Position of the box
+		this->scale =  scale;		// Size of the box in each axis
+		this->axis = axis;			// Axis of rotation
+		this->angle = angle;	    // Angle of rotation
+
+
+		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f; // Reset color to white
 
 		// Create a vertex array object
-		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f;
 		glGenVertexArrays(1, &vertexArrayID);
 		glBindVertexArray(vertexArrayID);
 
@@ -379,20 +374,16 @@ struct Building {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
 
 		// Create a vertex buffer object to store the color data
-        // TODO:
 		glGenBuffers(1, &colorBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
 
-		// TODO: Create a vertex buffer object to store the UV data
-
-
-
+		// Create a vertex buffer object to store the uv data
 		glGenBuffers(1, &uvBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
-		// --------------------------------------------------------
-		// --------------------------------------------------------
+
+		// Create a vertex buffer object to store the normal data
 		glGenBuffers(1, &normalBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(normal_buffer_data), normal_buffer_data, GL_STATIC_DRAW);
@@ -409,20 +400,15 @@ struct Building {
 			std::cerr << "Failed to load shaders." << std::endl;
 		}
 
-		// Get a handle for our "MVP" uniform
+		// Create the variable for the shader
 		mvpMatrixID = glGetUniformLocation(BuildingprogramID, "MVP");
 		lightPositionID = glGetUniformLocation(BuildingprogramID, "lightPosition");
 		lightIntensityID = glGetUniformLocation(BuildingprogramID, "lightIntensity");
 		lightDirectionID = glGetUniformLocation(BuildingprogramID, "lightDirection");
-
-
-
 		lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
 		shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
 
-		//BuildingtextureID = LoadTextureTileBox("../finalProject/textures/facade0.jpg");
-
-
+		// Store the texture in a vector
 		std::vector<GLuint> textures;
 
 		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade0.jpg"));
@@ -433,88 +419,89 @@ struct Building {
 		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade5.jpg"));
 		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade6.jpg"));
 
-
+		// Use a random value to pick a texture
 		std::random_device rd;
 		std::default_random_engine generator(rd());
 		std::uniform_int_distribution<int> distribution(0, 6);
-
 		int randomNumber = distribution(generator);
-
 		BuildingtextureID = textures[randomNumber];
 
+		// Create the texture variable for the shader
 		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
 
+		// Create and compile our GLSL program from the depth shaders
 		depthProgramID = LoadShadersFromFile("../finalProject/shader/depth/depth.vert", "../finalProject/shader/depth/depth.frag");
 		if (depthProgramID == 0) {
 			std::cerr << "Failed to load depth shaders." << std::endl;
 		}
 
+		// Create the variable for the depth shader
 		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
-		modelID = glGetUniformLocation(depthProgramID, "model");
 	}
 
+	// Rendering function
 	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
+		// Use the shader program for rendering the building
 		glUseProgram(BuildingprogramID);
 
-
+		// Bind the Vertex Array Object (VAO) to configure vertex attributes
 		glBindVertexArray(vertexArrayID);
 
+		// Enable and specify the vertex attribute for position (location 0)
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Enable and specify the vertex attribute for color (location 1)
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Enable and specify the vertex attribute for normals (location 2)
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, normalBufferID);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Bind the element array buffer (indices for drawing)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
-		// TODO: Model transform
-		// -----------------------
+		// Model matrix for transformation
         glm::mat4 modelMatrix = glm::mat4();
-        // Scale the box along each axis to make it look like a building
 		modelMatrix = glm::translate(modelMatrix, position);
 		modelMatrix = glm::rotate(modelMatrix,glm::radians(angle),axis);
 		modelMatrix = glm::scale(modelMatrix, scale);
 
-
-
-
-
-        // -----------------------
-
 		// Set model-view-projection matrix
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+		// Put the mvp matrix in the shader variable
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
+		// Set light model-view-projection matrix
 		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
+		// Put the light mvp matrix in the shader variable
 		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
 
+		// Active texture for the shadow
 		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
 		glUniform1i(shadowMapID, 5);
 
 
-		// TODO: Enable UV buffer and texture sampler
-		// ------------------------------------------
+		// Enable UV buffer and texture sampler
 		glEnableVertexAttribArray(3);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		// Set textureSampler to use texture unit 0
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, BuildingtextureID);
 		glUniform1i(textureBuildingSamplerID, 0);
 
 
+		// Send parameters to the shader variables
 		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
 		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
 		glUniform3fv(lightDirectionID, 1, &lightDirection[0]);
-		// ------------------------------------------
 
 		// Draw the box
 		glDrawElements(
@@ -528,30 +515,33 @@ struct Building {
 		glDisableVertexAttribArray(1);
 		glDisableVertexAttribArray(2);
 	}
-	void render_depth(glm::mat4 lightSpaceMatrix) {
 
+	// Depth function
+	void render_depth(glm::mat4 lightSpaceMatrix) {
+		// Use the shader program for depth
 		glUseProgram(depthProgramID);
 
+		// Bind the Vertex Array Object (VAO) to configure vertex attributes
 		glBindVertexArray(vertexArrayID);
 
+		// Enable and specify the vertex attribute for position (location 0)
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Bind the element array buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
 		// Set light-space matrix
-
 		glm::mat4 modelMatrix = glm::mat4();
-		// Scale the box along each axis to make it look like a building
-
-
 		modelMatrix = glm::translate(modelMatrix, position);
 		modelMatrix = glm::scale(modelMatrix, scale);
 		modelMatrix = glm::rotate(modelMatrix,glm::radians(angle),axis);
 
+		// Set light model-view-projection matrix
 		glm::mat4 mvpLight = lightSpaceMatrix * modelMatrix;
 
+		// Put the light mvp matrix in the shader variable
 		glUniformMatrix4fv(depthmvpMatrixID, 1, GL_FALSE, &mvpLight[0][0]);
 
 		// Draw the box
@@ -559,6 +549,7 @@ struct Building {
 
 		glDisableVertexAttribArray(0);
 	}
+	// Cleanup function
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
 		glDeleteBuffers(1, &colorBufferID);
@@ -573,12 +564,13 @@ struct Building {
 	}
 };
 
-
+// Skybox structure
 struct SkyBox {
 	glm::vec3 position;		// Position of the box
 	glm::vec3 scale;		// Size of the box in each axis
 
-	GLfloat vertex_buffer_data[72] = {	// Vertex definition for a canonical box
+	// Vertex definition for a canonical box
+	GLfloat vertex_buffer_data[72] = {
 		// Front face
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f,
@@ -616,6 +608,7 @@ struct SkyBox {
 		-1.0f, -1.0f, 1.0f,
 	};
 
+	// Color definition
 	GLfloat color_buffer_data[72] = {
 		// Front, red
 		1.0f, 0.0f, 0.0f,
@@ -654,9 +647,8 @@ struct SkyBox {
 		1.0f, 0.0f, 1.0f,
 	};
 
-
-
-	GLuint index_buffer_data[36] = {		// 12 triangle faces of a box
+	// Triangle faces of a box
+	GLuint index_buffer_data[36] = {
 		// Front face
 		0, 2, 1,  // triangle 1
 		0, 3, 2,  // triangle 2
@@ -682,6 +674,7 @@ struct SkyBox {
 		20, 23, 22, // triangle 2
 	};
 
+	// UV buffer definition
 	GLfloat uv_buffer_data[72] = {
 		// pos Z
 		0.25f, 0.666666666f,
@@ -721,8 +714,6 @@ struct SkyBox {
 	};
 
 
-
-
 	// OpenGL buffers
 	GLuint vertexArrayID;
 	GLuint vertexBufferID;
@@ -742,13 +733,15 @@ struct SkyBox {
 	GLuint depthProgramID;
 	GLuint depthmvpMatrixID;
 
+	// Initialization function
 	void initialize(glm::vec3 position, glm::vec3 scale) {
-		// Define scale of the building geometry
-		this->position = position;
-		this->scale = scale;
+
+		this->position = position; // Position of the box
+		this->scale = scale;	  // Scale of the box
+
+		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f; // Reset color to white
 
 		// Create a vertex array object
-		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f;
 		glGenVertexArrays(1, &vertexArrayID);
 		glBindVertexArray(vertexArrayID);
 
@@ -758,20 +751,14 @@ struct SkyBox {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_buffer_data), vertex_buffer_data, GL_STATIC_DRAW);
 
 		// Create a vertex buffer object to store the color data
-        // TODO:
 		glGenBuffers(1, &colorBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(color_buffer_data), color_buffer_data, GL_STATIC_DRAW);
 
-		// TODO: Create a vertex buffer object to store the UV data
-
-
-
+		// Create a vertex buffer object to store the uv data
 		glGenBuffers(1, &uvBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(uv_buffer_data), uv_buffer_data, GL_STATIC_DRAW);
-		// --------------------------------------------------------
-		// --------------------------------------------------------
 
 
 		// Create an index buffer object to store the index data that defines triangle faces
@@ -788,90 +775,85 @@ struct SkyBox {
 
 
 
-		// Get a handle for our "MVP" uniform
+		// Create the variable for the shader
 		mvpMatrixID = glGetUniformLocation(SkyboxprogramID, "MVP");
 		lightPositionID = glGetUniformLocation(SkyboxprogramID, "lightPosition");
 		lightIntensityID = glGetUniformLocation(SkyboxprogramID, "lightIntensity");
 		lightmvpMatrixID = glGetUniformLocation(SkyboxprogramID, "lightSpaceMatrix");
 		shadowMapID = glGetUniformLocation(SkyboxprogramID, "shadowMap");
 
-        // TODO: Load a texture
-        // --------------------
-
-
-
+		// Load a texture for mapping
 		SkyboxtextureID = LoadTextureTileBox("../finalProject/textures/skybox.png");
 
-        // TODO: Get a handle to texture sampler
-        // -------------------------------------
+		// Create the texture variable for the shader
 		textureSkyboxSamplerID = glGetUniformLocation(SkyboxprogramID,"SkyboxSampler");
 
+		// Create and compile our GLSL program from the depth shaders
 		depthProgramID = LoadShadersFromFile("../finalProject/shader/depth/depth.vert", "../finalProject/shader/depth/depth.frag");
 		if (depthProgramID == 0) {
 			std::cerr << "Failed to load depth shaders." << std::endl;
 		}
 
+		// Create the variable for the depth shader
 		depthmvpMatrixID = glGetUniformLocation(depthProgramID, "lightSpaceMatrix");
-        // -------------------------------------
+
 	}
 
+	// Rendering function
 	void render(glm::mat4 cameraMatrix,glm::mat4 lightSpaceMatrix) {
+
+		// Use the shader program for rendering
 		glUseProgram(SkyboxprogramID);
 
-
+		// Bind the Vertex Array Object (VAO) to configure vertex attributes
 		glBindVertexArray(vertexArrayID);
 
+		// Enable and specify the vertex attribute for position (location 0)
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Enable and specify the vertex attribute for color (location 1)
 		glEnableVertexAttribArray(1);
 		glBindBuffer(GL_ARRAY_BUFFER, colorBufferID);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Bind the element array buffer (indices for drawing)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
-		// TODO: Model transform
-		// -----------------------
+		// Model matrix for transformation
         glm::mat4 modelMatrix = glm::mat4();
-        // Scale the box along each axis to make it look like a building
-
 		modelMatrix = glm::translate(modelMatrix, position);
-
         modelMatrix = glm::scale(modelMatrix, scale);
-
-
-        // -----------------------
 
 		// Set model-view-projection matrix
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+		// Put the mvp matrix in the shader variable
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-
+		// Set model-view-projection matrix
 		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
+		// Put the light mvp matrix in the shader variable
+		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
 
+		// Active texture for the shadow
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthTexture);
 		glUniform1i(shadowMapID, 0);
 
-		glUniformMatrix4fv(lightmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
-
-
-		// Set light data
-		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
-		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
-
-		// TODO: Enable UV buffer and texture sampler
-		// ------------------------------------------
+		// Enable UV buffer and texture sampler
 		glEnableVertexAttribArray(2);
 		glBindBuffer(GL_ARRAY_BUFFER, uvBufferID);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		// Set textureSampler to use texture unit 0
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, SkyboxtextureID);
 		glUniform1i(textureSkyboxSamplerID, 1);
-        // ------------------------------------------
+
+		// Send parameters to the shader variables
+		glUniform3fv(lightPositionID, 1, &lightPosition[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity[0]);
 
 		// Draw the box
 		glDrawElements(
@@ -883,31 +865,34 @@ struct SkyBox {
 
 		glDisableVertexAttribArray(0);
 		glDisableVertexAttribArray(1);
-        //glDisableVertexAttribArray(2);
 	}
+
+	// Depth function
 	void render_depth(glm::mat4 lightSpaceMatrix) {
 
+		// Use the shader program for depth
 		glUseProgram(depthProgramID);
 
+		// Bind the Vertex Array Object (VAO) to configure vertex attributes
 		glBindVertexArray(vertexArrayID);
 
+		// Enable and specify the vertex attribute for position (location 0)
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+		// Bind the element array buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 
+		// Set light-space matrix
 		glm::mat4 modelMatrix = glm::mat4();
-		// Scale the box along each axis to make it look like a building
-
 		modelMatrix = glm::translate(modelMatrix, position);
-
 		modelMatrix = glm::scale(modelMatrix, scale);
 
+		// Set light model-view-projection matrix
 		glm::mat4 lightmvp = lightSpaceMatrix * modelMatrix;
 
-		// Set light-space matrix
-
+		// Put the light mvp matrix in the shader variable
 		glUniformMatrix4fv(depthmvpMatrixID, 1, GL_FALSE, &lightmvp[0][0]);
 
 		// Draw the box
@@ -916,6 +901,7 @@ struct SkyBox {
 		glDisableVertexAttribArray(0);
 	}
 
+	// Cleanup function
 	void cleanup() {
 		glDeleteBuffers(1, &vertexBufferID);
 		glDeleteBuffers(1, &colorBufferID);
@@ -928,13 +914,14 @@ struct SkyBox {
 	}
 };
 
-
+// Bird Structure
 struct Bird {
 
-	glm::vec3 scale;
-	glm::vec3 position;
-	glm::vec3 axis;
-	float angle;
+	glm::vec3 position;		// Position of the box
+	glm::vec3 scale;		// Scale of the box
+	glm::vec3 axis;			// Axis of rotation
+	float angle;			// Angle of rotation
+
 	// Shader variable IDs
 	GLuint mvpMatrixID;
 	GLuint jointMatricesID;
@@ -944,6 +931,7 @@ struct Bird {
 	GLuint textureID;
 	GLuint textureSamplerID;
 
+	// Model
 	tinygltf::Model model;
 
 	// Each VAO corresponds to each mesh primitive in the GLTF model
@@ -1006,8 +994,6 @@ struct Bird {
 		int nodeIndex,
 		std::vector<glm::mat4> &localTransforms)
 	{
-		// ----------------------------------------
-		// TODO: your code here
 
 		const tinygltf::Node& node = model.nodes[nodeIndex];
 		localTransforms[nodeIndex] = getNodeTransform(node);
@@ -1015,7 +1001,6 @@ struct Bird {
 		for (int childIndex : node.children) {
 			computeLocalNodeTransform(model, childIndex, localTransforms);
 		}
-		// ----------------------------------------
 	}
 
 	void computeGlobalNodeTransform(const tinygltf::Model& model,
@@ -1023,14 +1008,11 @@ struct Bird {
 		int nodeIndex, const glm::mat4& parentTransform,
 		std::vector<glm::mat4> &globalTransforms)
 	{
-		// ----------------------------------------
-		// TODO: your code here
 
 		globalTransforms[nodeIndex] = parentTransform * localTransforms[nodeIndex];
 		for (int childIndex : model.nodes[nodeIndex].children) {
 			computeGlobalNodeTransform(model, localTransforms, childIndex, globalTransforms[nodeIndex], globalTransforms);
 		}
-		// ----------------------------------------
 	}
 
 	std::vector<SkinObject> prepareSkinning(const tinygltf::Model &model) {
@@ -1064,8 +1046,7 @@ struct Bird {
 			skinObject.globalJointTransforms.resize(skin.joints.size());
 			skinObject.jointMatrices.resize(skin.joints.size());
 
-			// ----------------------------------------------
-			// TODO: your code here to compute joint matrices
+			// Compute joint matrices
 
 
 			// Compute local transforms at each node
@@ -1082,8 +1063,6 @@ struct Bird {
 				int nodeIndex = skin.joints[j];
 				skinObject.jointMatrices[j] = skinObject.globalJointTransforms[nodeIndex] * skinObject.inverseBindMatrices[j];
 			}
-			// ----------------------------------------------
-
 			skinObjects.push_back(skinObject);
 		}
 		return skinObjects;
@@ -1196,8 +1175,8 @@ struct Bird {
 			const std::vector<float> &times = animationObject.samplers[channel.sampler].input;
 			float animationTime = fmod(time, times.back());
 
-			// ----------------------------------------------------------
-			// TODO: Find a keyframe for getting animation data
+
+			// Find a keyframe for getting animation data
 
 			int keyframeIndex = 0;
 
@@ -1206,57 +1185,41 @@ struct Bird {
 
 			float t0 = times[keyframeIndex];
 			float t1 = times[nextKeyframeIndex];
-			// ----------------------------------------------------------
-
-
-
 
 			const unsigned char *outputPtr = &outputBuffer.data[outputBufferView.byteOffset + outputAccessor.byteOffset];
 			const float *outputBuf = reinterpret_cast<const float*>(outputPtr);
 
-
-
-			// -----------------------------------------------------------
-			// TODO: Add interpolation for smooth animation
+			// Interpolation for smooth animation
 			float interpolationFactor = (animationTime - t0) / (t1 - t0);
 
 			if (channel.target_path == "translation") {
 	            glm::vec3 translation0, translation1;
 
-	            // Lire les données de translation des keyframes voisins
 	            memcpy(&translation0, outputPtr + keyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 	            memcpy(&translation1, outputPtr + nextKeyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 
-	            // Interpolation linéaire
 	            glm::vec3 interpolatedTranslation = glm::mix(translation0, translation1, interpolationFactor);
 
-	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] = glm::translate(nodeTransforms[targetNodeIndex], interpolatedTranslation);
 
 	        } else if (channel.target_path == "rotation") {
 	            glm::quat rotation0, rotation1;
 
-	            // Lire les données de rotation des keyframes voisins
 	            memcpy(&rotation0, outputPtr + keyframeIndex * 4 * sizeof(float), 4 * sizeof(float));
 	            memcpy(&rotation1, outputPtr + nextKeyframeIndex * 4 * sizeof(float), 4 * sizeof(float));
 
-	            // Interpolation sphérique (SLERP) pour les quaternions
 	            glm::quat interpolatedRotation = glm::slerp(rotation0, rotation1, interpolationFactor);
 
-	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] *= glm::mat4_cast(interpolatedRotation);
 
 	        } else if (channel.target_path == "scale") {
 	            glm::vec3 scale0, scale1;
 
-	            // Lire les données d'échelle des keyframes voisins
 	            memcpy(&scale0, outputPtr + keyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 	            memcpy(&scale1, outputPtr + nextKeyframeIndex * 3 * sizeof(float), 3 * sizeof(float));
 
-	            // Interpolation linéaire
 	            glm::vec3 interpolatedScale = glm::mix(scale0, scale1, interpolationFactor);
 
-	            // Mettre à jour la transformation locale
 	            nodeTransforms[targetNodeIndex] = glm::scale(nodeTransforms[targetNodeIndex], interpolatedScale);
 	        }
 		}
@@ -1264,21 +1227,15 @@ struct Bird {
 
 	void updateSkinning(const std::vector<glm::mat4> &nodeTransforms) {
 
-		// -------------------------------------------------
-		// TODO: Recompute joint matrices
+		// Recompute joint matrices
 		for(int j = 0; j < skinObjects[0].jointMatrices.size(); j++) {
 			int nodeIndex = model.skins[0].joints[j];
 			skinObjects[0].jointMatrices[j] = skinObjects[0].globalJointTransforms[nodeIndex] * skinObjects[0].inverseBindMatrices[j];
 		}
-
-
-		// -------------------------------------------------
 	}
 
 	void update(float time) {
 
-		// -------------------------------------------------
-		// TODO: your code here
 		if (model.animations.size() > 0) {
 			const tinygltf::Animation &animation = model.animations[0];
 			const AnimationObject &animationObject = animationObjects[0];
@@ -1291,24 +1248,16 @@ struct Bird {
 
 			updateAnimation(model, animation, animationObject, time, nodeTransforms);
 
-			// ----------------------------------------------
-
-			// ----------------------------------------------
-			// TODO: Recompute global transforms at each node
+			// Recompute global transforms at each node
 			std::vector<glm::mat4> globalNodeTransforms(skin.joints.size(), glm::mat4(1.0f));
-
 
 			int rootNodeIndex = skin.joints[0]; // Premier joint (racine)
 			computeGlobalNodeTransform(model, nodeTransforms, rootNodeIndex, glm::mat4(1.0f), globalNodeTransforms);
 
-
 			skinObjects[0].globalJointTransforms = globalNodeTransforms;
 
-
 			updateSkinning(nodeTransforms);
-			// ----------------------------------------------
 		}
-		// -------------------------------------------------
 
 	}
 
@@ -1367,6 +1316,7 @@ struct Bird {
 		lightIntensityID = glGetUniformLocation(programID, "lightIntensity");
 		jointMatricesID = glGetUniformLocation(programID, "jointMatrices");
 
+		// Active texture for mapping
 		glActiveTexture(GL_TEXTURE4);
 
 		// Load a texture
@@ -1528,25 +1478,26 @@ struct Bird {
 	}
 
 	void render(glm::mat4 cameraMatrix) {
+
+		// Use the shader program for rendering
 		glUseProgram(programID);
 
-
+		// Model matrix for transformation
 		glm::mat4 modelMatrix = glm::mat4();
 		modelMatrix = glm::scale(modelMatrix, scale);
 		modelMatrix = glm::rotate(modelMatrix, angle, axis);
 		modelMatrix = glm::translate(modelMatrix, position);
-		// Set camera
+
+		// Set model-view-projection matrix
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
+
+		// Put the mvp matrix in the shader variable
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-
-		// -----------------------------------------------------------------
-		// TODO: Set animation data for linear blend skinning in shader
-
+		// Put model information in the shader variables
 		glUniformMatrix4fv(jointMatricesID, skinObjects[0].jointMatrices.size(), GL_FALSE, &skinObjects[0].jointMatrices[0][0][0]);
 
-		// -----------------------------------------------------------------
-
+		// Active texture for mapping
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glUniform1i(textureSamplerID, 4);
@@ -1577,6 +1528,7 @@ struct Bamboo {
 	GLuint textureSamplerID;
 	GLuint instanceBufferID;
 
+	// Model
 	tinygltf::Model model;
 
 	// Each VAO corresponds to each mesh primitive in the GLTF model
@@ -1658,7 +1610,7 @@ struct Bamboo {
 
 		glGenBuffers(1, &instanceBufferID);
 		glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
-		glBufferData(GL_ARRAY_BUFFER, Transform_tree.size() * sizeof(Instance_tree), Transform_tree.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, Transform_tree.size() * sizeof(Instance_bamboo), Transform_tree.data(), GL_STATIC_DRAW);
 
 
 
@@ -1794,15 +1746,18 @@ struct Bamboo {
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos.at(indexAccessor.bufferView));
 
+			// Creation of instance buffer for using instancing (containing translation)
 			glEnableVertexAttribArray(6);
 			glBindBuffer(GL_ARRAY_BUFFER, instanceBufferID);
-			glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_tree), (void*)0);
+			glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_bamboo), (void*)0);
 			glVertexAttribDivisor(6, 1);
 
+			// Creation of instance buffer for using instancing (containing scaling)
 			glEnableVertexAttribArray(7);
-			glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_tree), (void*)offsetof(Instance_tree, scale));
+			glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(Instance_bamboo), (void*)offsetof(Instance_bamboo, scale));
 			glVertexAttribDivisor(7, 1);
 
+			// Draw mesh with instancing
 			glDrawElementsInstanced(primitive.mode, indexAccessor.count,
 						indexAccessor.componentType,
 						BUFFER_OFFSET(indexAccessor.byteOffset),
@@ -1833,30 +1788,27 @@ struct Bamboo {
 	}
 
 	void render(glm::mat4 cameraMatrix) {
+		// Use the shader program for rendering
 		glUseProgram(programID);
 
-
+		// Model matrix for rotation
 		glm::mat4 modelMatrix = glm::mat4();
 		modelMatrix = glm::rotate(modelMatrix,glm::radians(90.0f),glm::vec3(1,0,0));
-		// Set camera
+
+		// Set model-view-projection matrix
 		glm::mat4 mvp = cameraMatrix * modelMatrix;
 
-
+		// Put the mvp matrix in the shader variable
 		glUniformMatrix4fv(mvpMatrixID, 1, GL_FALSE, &mvp[0][0]);
 
-
-		// -----------------------------------------------------------------
-		// TODO: Set animation data for linear blend skinning in shader
-
-		// -----------------------------------------------------------------
-
+		// Active texture for mapping
 		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, textureID);
 		glUniform1i(textureSamplerID, 5);
 
 		// Set light data
-		glUniform3fv(lightPositionID, 1, &lightPosition3[0]);
-		glUniform3fv(lightIntensityID, 1, &lightIntensity3[0]);
+		glUniform3fv(lightPositionID, 1, &lightPosition2[0]);
+		glUniform3fv(lightIntensityID, 1, &lightIntensity2[0]);
 
 		// Draw the GLTF model
 		drawModel(primitiveObjects, model);
@@ -1907,14 +1859,12 @@ int main(void)
 
 	glfwGetFramebufferSize(window, &shadowMapWidth, &shadowMapHeight);
 
+	// Creation of fbo for implementing shadow map
 	glGenFramebuffers(1, &fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-
-
+	// Depth texture
 	glGenTextures(1, &depthTexture);
-
-
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
 	glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,shadowMapWidth,shadowMapHeight,0,GL_DEPTH_COMPONENT,GL_FLOAT,NULL);
 
@@ -1922,7 +1872,6 @@ int main(void)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
 
@@ -1933,10 +1882,8 @@ int main(void)
 		std::cerr << "Erreur : FBO incomplet" << std::endl;
 	}
 
-
+	// Bind frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 
 	// Background
 	glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
@@ -1947,6 +1894,7 @@ int main(void)
 	glCullFace(GL_BACK);
 
 
+	// Creation of transformation for bamboo (instancing vector)
 	for (int i = 0; i < 20; ++i) {
 		glm::vec3 position(-3500 - (i * 100), -1600 + (i*100), 200 );
 		glm::vec3 scale(1, 1, 1);
@@ -1958,6 +1906,7 @@ int main(void)
 		Transform_tree.push_back({position, scale});
 	}
 
+	// Creation of a phoenix bird
 	Bird my_bird;
 	my_bird.initialize(glm::vec3(-1000,3000,1800),
 		glm::vec3(1,1,1),
@@ -1965,6 +1914,7 @@ int main(void)
 		glm::radians(45.0f)
 		);
 
+	// Creation of a phoenix bird
 	Bird my_bird2;
 	my_bird2.initialize(glm::vec3(0,6000,1000),
 		glm::vec3(1,1,1),
@@ -1972,6 +1922,7 @@ int main(void)
 		glm::radians(45.0f)
 		);
 
+	// Creation of a phoenix bird
 	Bird my_bird3;
 	my_bird3.initialize(glm::vec3(2000,1000,1000),
 		glm::vec3(1,1,1),
@@ -1979,6 +1930,7 @@ int main(void)
 		glm::radians(45.0f)
 		);
 
+	// Creation of a phoenix bird
 	Bird my_bird4;
 	my_bird4.initialize(glm::vec3(1500,5000,3000),
 		glm::vec3(1,1,1),
@@ -1986,11 +1938,11 @@ int main(void)
 		glm::radians(45.0f)
 		);
 
-
+	// Creation of bamboo (just one thanks to the instancing)
 	Bamboo bamboo;
 	bamboo.initialize();
 
-
+	// Creation of many building
 	std::vector<Building> first_buildings;
 
 	for (int i=0; i < 5; ++i) {
@@ -2078,68 +2030,53 @@ int main(void)
 	0.0f
 	);
 
+	// Creation of the skybox
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
 					 glm::vec3(10000, 10000, 10000)
 
 	);
 
-
-
 	// Camera setup
-
-
     eye_center.y = viewDistance * cos(viewPolar);
     eye_center.x = viewDistance * cos(viewAzimuth);
     eye_center.z = viewDistance * sin(viewAzimuth);
 
-	/*
-	eye_center.x = -1500.0f;
-	eye_center.y = 0.0f;
-	eye_center.z = 0.0f;
-	*/
-
+	// Projection and View camera matrix
 	glm::mat4 viewMatrix, projectionMatrix;
     glm::float32 FoV = 45;
 	glm::float32 zNear = 0.1f;
 	glm::float32 zFar = 20000.0f;
 	projectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, zNear, zFar);
 
-
-
-
-
+	// Projection light matrix
 	glm::mat4 lightProjectionMatrix = glm::ortho(
 	orthoLeft, orthoRight,
 	orthoBottom, orthoTop,
 	orthoNear, orthoFar
 );
 
-
 	static double lastTime = glfwGetTime();
 	float time = 0.0f;			// Animation time
 	float fTime = 0.0f;			// Time for measuring fps
 	unsigned long frames = 0;
 
-
 	do
 	{
-
+		// Clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-
+		// View light matrix
 		glm::mat4 lightViewMatrix = glm::lookAt(lightPosition, glm::vec3(-9900.0f,-9900.0f,-9900.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-		//glm::mat4 lightViewMatrix = glm::lookAt(lightPosition,lightPosition + glm::normalize(lightDirection),glm::vec3(0,1,0));
+		// light space matrix
 		glm::mat4 lightSpaceMatrix = lightProjectionMatrix * lightViewMatrix;
 
-
-
+		// Bind fbo
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+		// depth rendering for shadow pass
 		my_sky_box.render_depth(lightSpaceMatrix);
 
 		for (auto &building : first_buildings) {
@@ -2150,21 +2087,22 @@ int main(void)
 			building.render_depth(lightSpaceMatrix);
 		}
 
+		// Unbind fbo
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		// Return to initial view
 		glViewport(0, 0, windowWidth, windowHeight);
+
+		// Clear
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-
+		// Camera view matrix
 		viewMatrix = glm::lookAt(eye_center, lookat+eye_center, up);
 
-
-	//Camera Lab4 //viewMatrix = glm::lookAt(eye_center, glm::vec3(0,0,0), glm::vec3(0,1,0));
+		// View projection camera matrix
 		glm::mat4 vp = projectionMatrix * viewMatrix;
 
-
-
+		// Animation
 		double currentTime = glfwGetTime();
 		float deltaTime = float(currentTime - lastTime);
 		lastTime = currentTime;
@@ -2177,9 +2115,8 @@ int main(void)
 			my_bird4.update(time);
 		}
 
-		//glDepthMask(GL_FALSE);
+		// Rendering
 		my_sky_box.render(vp,lightSpaceMatrix);
-		//glDepthMask(GL_TRUE);
 		bamboo.render(vp);
 		my_bird.render(vp);
 		my_bird2.render(vp);
@@ -2200,6 +2137,8 @@ int main(void)
 		my_building2.render(vp,lightSpaceMatrix);
 		my_building3.render(vp,lightSpaceMatrix);
 
+
+		// FPS
 		frames++;
 		fTime += deltaTime;
 		if (fTime > 2.0f) {
@@ -2212,15 +2151,14 @@ int main(void)
 			glfwSetWindowTitle(window, stream.str().c_str());
 		}
 
-
-
-
+		// Save depth texture (picture)
 		if (saveDepth) {
 			std::string filename = "../finalProject/depth_camera.png";
 			saveDepthTexture(fbo, filename);
 			std::cout << "Depth texture saved to " << filename << std::endl;
 			saveDepth = false;
 		}
+
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -2297,47 +2235,4 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	lookat = glm::normalize(direction);
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-
-
-
-
-
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
-	static bool firstMouse = true;
-	static float lastX = 400, lastY = 300;
-	static float sensitivity = 0.05f;
-
-	static float yaw = -90.0f;
-	static float pitch = 0.0f;
-
-	if (firstMouse) {
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
-
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-
-	if (pitch > 89.0f) pitch = 89.0f;
-	if (pitch < -89.0f) pitch = -89.0f;
-
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	lookat = glm::normalize(front);
 }
