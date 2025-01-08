@@ -122,7 +122,7 @@ CMAKE_INSTALL_PREFIX:PATH=C:/Program Files (x86)/finalProject3
 CMAKE_LINKER:FILEPATH=C:/Program Files/JetBrains/CLion 2024.2.2/bin/mingw/bin/ld.exe
 
 //make program
-CMAKE_MAKE_PROGRAM:FILEPATH=C:/Program Files/JetBrains/CLion 2024.2.2/bin/ninja/win/x64/ninja.exe
+CMAKE_MAKE_PROGRAM:FILEPATH=C:/PROGRA~1/JETBRA~1/CLION2~1.2/bin/ninja/win/x64/ninja.exe
 
 //Flags used by the linker during the creation of modules during
 // all build types.
@@ -160,7 +160,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=finalProject3
+CMAKE_PROJECT_NAME:STATIC=finalProject
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=C:/Program Files/JetBrains/CLion 2024.2.2/bin/mingw/bin/ranlib.exe
@@ -296,6 +296,15 @@ finalProject3_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 finalProject3_SOURCE_DIR:STATIC=C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics
+
+//Value Computed by CMake
+finalProject_BINARY_DIR:STATIC=C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug
+
+//Value Computed by CMake
+finalProject_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+finalProject_SOURCE_DIR:STATIC=C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics
 
 //Value Computed by CMake
 glad_BINARY_DIR:STATIC=C:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/cmake-build-debug/external/glad-3.3

@@ -11,7 +11,7 @@
 # =============================================================================
 
 # =============================================================================
-# Project: finalProject3
+# Project: finalProject
 # Configurations: Debug
 # =============================================================================
 
@@ -49,19 +49,19 @@ cmake_ninja_workdir = C$:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computerg
 
 build cmake_object_order_depends_target_main: phony || cmake_object_order_depends_target_glad cmake_object_order_depends_target_glfw
 
-build CMakeFiles/main.dir/finalProject3/main.cpp.obj: CXX_COMPILER__main_unscanned_Debug C$:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject3/main.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\finalProject3\main.cpp.obj.d
+build CMakeFiles/main.dir/finalProject/main.cpp.obj: CXX_COMPILER__main_unscanned_Debug C$:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject/main.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\finalProject\main.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glm-0.9.7.1 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-opengl-3.3/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/tinygltf-2.9.3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include
+  INCLUDES = -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glm-0.9.7.1 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-opengl-3.3/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/tinygltf-2.9.3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir\finalProject3
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\finalProject
 
-build CMakeFiles/main.dir/finalProject3/render/shader.cpp.obj: CXX_COMPILER__main_unscanned_Debug C$:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject3/render/shader.cpp || cmake_object_order_depends_target_main
-  DEP_FILE = CMakeFiles\main.dir\finalProject3\render\shader.cpp.obj.d
+build CMakeFiles/main.dir/finalProject/render/shader.cpp.obj: CXX_COMPILER__main_unscanned_Debug C$:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject/render/shader.cpp || cmake_object_order_depends_target_main
+  DEP_FILE = CMakeFiles\main.dir\finalProject\render\shader.cpp.obj.d
   FLAGS = -g -fdiagnostics-color=always
-  INCLUDES = -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glm-0.9.7.1 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-opengl-3.3/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/tinygltf-2.9.3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include
+  INCLUDES = -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glfw-3.1.2/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glm-0.9.7.1 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-opengl-3.3/include -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/tinygltf-2.9.3 -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/finalProject -IC:/Users/thiba/OneDrive/Documents/ECOLE/Trinity/computergraphics/external/glad-3.3/include
   OBJECT_DIR = CMakeFiles\main.dir
-  OBJECT_FILE_DIR = CMakeFiles\main.dir\finalProject3\render
+  OBJECT_FILE_DIR = CMakeFiles\main.dir\finalProject\render
 
 
 # =============================================================================
@@ -71,7 +71,7 @@ build CMakeFiles/main.dir/finalProject3/render/shader.cpp.obj: CXX_COMPILER__mai
 #############################################
 # Link the executable main.exe
 
-build main.exe: CXX_EXECUTABLE_LINKER__main_Debug CMakeFiles/main.dir/finalProject3/main.cpp.obj CMakeFiles/main.dir/finalProject3/render/shader.cpp.obj | glfw3dll.a libglad.dll.a || glfw3.dll libglad.dll
+build main.exe: CXX_EXECUTABLE_LINKER__main_Debug CMakeFiles/main.dir/finalProject/main.cpp.obj CMakeFiles/main.dir/finalProject/render/shader.cpp.obj | glfw3dll.a libglad.dll.a || glfw3.dll libglad.dll
   FLAGS = -g
   LINK_LIBRARIES = -lopengl32  -lglu32  glfw3dll.a  libglad.dll.a  -lopengl32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\main.dir

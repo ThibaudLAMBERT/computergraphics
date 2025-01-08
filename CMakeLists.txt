@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0$1)
-project(finalProject3)
+project(finalProject)
 
 find_package(OpenGL REQUIRED)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
@@ -14,12 +14,12 @@ include_directories(
         external/glad-opengl-3.3/include/
         external/
         external/tinygltf-2.9.3/
-        finalProject3/
+        finalProject/
 )
 
 add_executable(main
-        finalProject3/main.cpp
-        finalProject3/render/shader.cpp
+        finalProject/main.cpp
+        finalProject/render/shader.cpp
 )
 target_link_libraries(main
         ${OPENGL_LIBRARY}
