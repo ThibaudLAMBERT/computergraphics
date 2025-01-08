@@ -149,10 +149,19 @@ static GLuint LoadTextureTileBox(const char *texture_file_path) {
 }
 
 
+struct Instance_tree {
+	glm::vec3 position;
+	glm::vec3 scale;
+};
+
+std::vector<Instance_tree> Transform_tree;
+
 
 struct Building {
 	glm::vec3 position;		// Position of the box
-	glm::vec3 scale;		// Size of the box in each axis
+	glm::vec3 scale;
+	glm::vec3 axis;
+	float angle;
 
 	GLfloat vertex_buffer_data[72] = {	// Vertex definition for a canonical box
 
@@ -352,13 +361,15 @@ struct Building {
 	GLuint lightDirectionID;
 	GLuint modelID;
 
-	void initialize(glm::vec3 position, glm::vec3 scale) {
+	void initialize(glm::vec3 position, glm::vec3 scale,glm::vec3 axis, float angle) {
 		// Define scale of the building geometry
 		this->position = position;
 		this->scale = scale;
+		this->axis = axis;
+		this->angle = angle;
 
 		// Create a vertex array object
-		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 0.0f;
+		for (int i = 0; i < 72; ++i) color_buffer_data[i] = 1.0f;
 		glGenVertexArrays(1, &vertexArrayID);
 		glBindVertexArray(vertexArrayID);
 
@@ -397,16 +408,6 @@ struct Building {
 		{
 			std::cerr << "Failed to load shaders." << std::endl;
 		}
-		glm::mat4 modelMatrix = glm::mat4();
-		// Scale the box along each axis to make it look like a building
-
-		modelMatrix = glm::translate(modelMatrix, position);
-
-		modelMatrix = glm::scale(modelMatrix, scale);
-
-		std::cout << "Model matrix" << std::endl;
-		//afficherMatrice(modelMatrix);
-
 
 		// Get a handle for our "MVP" uniform
 		mvpMatrixID = glGetUniformLocation(BuildingprogramID, "MVP");
@@ -419,7 +420,28 @@ struct Building {
 		lightmvpMatrixID = glGetUniformLocation(BuildingprogramID, "lightSpaceMatrix");
 		shadowMapID = glGetUniformLocation(BuildingprogramID, "shadowMap");
 
-		BuildingtextureID = LoadTextureTileBox("../finalProject/textures/facade0.jpg");
+		//BuildingtextureID = LoadTextureTileBox("../finalProject/textures/facade0.jpg");
+
+
+		std::vector<GLuint> textures;
+
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade0.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade1.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade2.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade3.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade4.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade5.jpg"));
+		textures.push_back(LoadTextureTileBox("../finalProject/textures/facade6.jpg"));
+
+
+		std::random_device rd;
+		std::default_random_engine generator(rd());
+		std::uniform_int_distribution<int> distribution(0, 6);
+
+		int randomNumber = distribution(generator);
+
+		BuildingtextureID = textures[randomNumber];
+
 		textureBuildingSamplerID = glGetUniformLocation(BuildingprogramID,"buildingSampler");
 
 		depthProgramID = LoadShadersFromFile("../finalProject/shader/depth/depth.vert", "../finalProject/shader/depth/depth.frag");
@@ -455,10 +477,12 @@ struct Building {
 		// -----------------------
         glm::mat4 modelMatrix = glm::mat4();
         // Scale the box along each axis to make it look like a building
-
 		modelMatrix = glm::translate(modelMatrix, position);
+		modelMatrix = glm::rotate(modelMatrix,glm::radians(angle),axis);
+		modelMatrix = glm::scale(modelMatrix, scale);
 
-        modelMatrix = glm::scale(modelMatrix, scale);
+
+
 
 
         // -----------------------
@@ -521,9 +545,10 @@ struct Building {
 		glm::mat4 modelMatrix = glm::mat4();
 		// Scale the box along each axis to make it look like a building
 
-		modelMatrix = glm::translate(modelMatrix, position);
 
+		modelMatrix = glm::translate(modelMatrix, position);
 		modelMatrix = glm::scale(modelMatrix, scale);
+		modelMatrix = glm::rotate(modelMatrix,glm::radians(angle),axis);
 
 		glm::mat4 mvpLight = lightSpaceMatrix * modelMatrix;
 
@@ -902,22 +927,6 @@ struct SkyBox {
 		glDeleteProgram(depthProgramID);
 	}
 };
-
-
-
-
-struct Instance_tree {
-	glm::vec3 position;
-	glm::vec3 scale;
-};
-
-std::vector<Instance_tree> Transform_tree;
-
-
-
-
-
-
 
 
 struct Bird {
@@ -1556,9 +1565,6 @@ struct Bird {
 };
 
 
-
-
-
 struct Bamboo {
 
 	// Shader variable IDs
@@ -1862,9 +1868,6 @@ struct Bamboo {
 };
 
 
-
-
-
 int main(void)
 {
 	// Initialise GLFW
@@ -1956,7 +1959,28 @@ int main(void)
 	}
 
 	Bird my_bird;
-	my_bird.initialize(glm::vec3(0,3000,1000),
+	my_bird.initialize(glm::vec3(-1000,3000,1800),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(45.0f)
+		);
+
+	Bird my_bird2;
+	my_bird2.initialize(glm::vec3(0,6000,1000),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(45.0f)
+		);
+
+	Bird my_bird3;
+	my_bird3.initialize(glm::vec3(2000,1000,1000),
+		glm::vec3(1,1,1),
+		glm::vec3(1,0,0),
+		glm::radians(45.0f)
+		);
+
+	Bird my_bird4;
+	my_bird4.initialize(glm::vec3(1500,5000,3000),
 		glm::vec3(1,1,1),
 		glm::vec3(1,0,0),
 		glm::radians(45.0f)
@@ -1967,17 +1991,92 @@ int main(void)
 	bamboo.initialize();
 
 
+	std::vector<Building> first_buildings;
+
+	for (int i=0; i < 5; ++i) {
+		std::vector<int> values = {4000,5000, 6000, 7000};
+		std::random_device rd;
+		std::default_random_engine generator(rd());
+
+		std::uniform_int_distribution<int> distribution(0, values.size() - 1);
+		int randomIndex = distribution(generator);
+		int randomValue = values[randomIndex];
+
+
+		Building building;
+		building.initialize(glm::vec3(9000 ,-10000,9000 - (i*3000)),
+			glm::vec3(1000,randomValue,1000),
+			glm::vec3(0,1,0),
+			0.0f
+			);
+		first_buildings.push_back(building);
+	}
+
+
+	std::vector<Building> second_buildings;
+
+	for (int i=0; i < 5; ++i) {
+		std::vector<int> values = {4000,5000, 6000, 7000};
+		std::random_device rd;
+		std::default_random_engine generator(rd());
+
+		std::uniform_int_distribution<int> distribution(0, values.size() - 1);
+		int randomIndex = distribution(generator);
+		int randomValue = values[randomIndex];
+
+
+		Building building;
+		building.initialize(glm::vec3(0 ,-10000,9000 - (i*3000)),
+			glm::vec3(1000,randomValue,1000),
+			glm::vec3(0,1,0),
+			0.0f
+			);
+		second_buildings.push_back(building);
+	}
+
+
+	std::vector<Building> third_buildings;
+
+	for (int i=0; i < 5; ++i) {
+		std::vector<int> values = {4000,5000, 6000, 7000};
+		std::random_device rd;
+		std::default_random_engine generator(rd());
+
+		std::uniform_int_distribution<int> distribution(0, values.size() - 1);
+		int randomIndex = distribution(generator);
+		int randomValue = values[randomIndex];
+
+
+		Building building;
+		building.initialize(glm::vec3(-9000 ,-10000,-9000 + (i*3000)),
+			glm::vec3(1000,randomValue,1000),
+			glm::vec3(0,1,0),
+			0.0f
+			);
+		third_buildings.push_back(building);
+	}
+
+
 	Building my_building;
-	my_building.initialize(glm::vec3(9000,-10000,9000),glm::vec3(1000,10000,1000));
+	my_building.initialize(glm::vec3(300,200,9000),
+		glm::vec3(600,400,600),
+		glm::vec3(0,1,0),
+		-50.0f
+		);
 
 	Building my_building2;
-	my_building2.initialize(glm::vec3(0,-10000,9000),glm::vec3(1000,8000,1000));
+	my_building2.initialize(glm::vec3(-9000,500,8000),
+		glm::vec3(600,400,600),
+		glm::vec3(0,1,0),
+		0.0f
+		);
 
 	Building my_building3;
-	my_building3.initialize(glm::vec3(-9000,-10000,-9000),glm::vec3(1000,10000,1000));
-
-	Building my_building4;
-	my_building4.initialize(glm::vec3(300,150,9000),glm::vec3(200,400,200));
+	my_building3.initialize(glm::vec3(6500,150,-8000),
+	glm::vec3(600,400,600),
+	glm::vec3(0,1,0),
+	0.0f
+	);
 
 	SkyBox my_sky_box;
 	my_sky_box.initialize(glm::vec3 (0, 0, 0),
@@ -2043,12 +2142,13 @@ int main(void)
 
 		my_sky_box.render_depth(lightSpaceMatrix);
 
-		my_building.render_depth(lightSpaceMatrix);
-		my_building2.render_depth(lightSpaceMatrix);
+		for (auto &building : first_buildings) {
+			building.render_depth(lightSpaceMatrix);
+		}
 
-
-
-
+		for (auto &building : second_buildings) {
+			building.render_depth(lightSpaceMatrix);
+		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -2072,6 +2172,9 @@ int main(void)
 		if (playAnimation) {
 			time += deltaTime * playbackSpeed;
 			my_bird.update(time);
+			my_bird2.update(time);
+			my_bird3.update(time);
+			my_bird4.update(time);
 		}
 
 		//glDepthMask(GL_FALSE);
@@ -2079,13 +2182,23 @@ int main(void)
 		//glDepthMask(GL_TRUE);
 		bamboo.render(vp);
 		my_bird.render(vp);
+		my_bird2.render(vp);
+		my_bird3.render(vp);
+		my_bird4.render(vp);
+
+		for (auto &building : first_buildings) {
+			building.render(vp,lightSpaceMatrix);
+		}
+
+		for (auto &building : second_buildings) {
+			building.render(vp,lightSpaceMatrix);
+		}
+		for (auto &building : third_buildings) {
+			building.render(vp,lightSpaceMatrix);
+		}
 		my_building.render(vp,lightSpaceMatrix);
 		my_building2.render(vp,lightSpaceMatrix);
 		my_building3.render(vp,lightSpaceMatrix);
-		my_building4.render(vp,lightSpaceMatrix);
-
-
-
 
 		frames++;
 		fTime += deltaTime;
@@ -2117,8 +2230,25 @@ int main(void)
 
 	// Clean up
 	my_sky_box.cleanup();
+
+	for (auto &building : first_buildings) {
+		building.cleanup();
+	}
+
+	for (auto &building : second_buildings) {
+		building.cleanup();
+	}
+
+	for (auto &building : third_buildings) {
+		building.cleanup();
+	}
+
 	my_building.cleanup();
+	my_building2.cleanup();
 	my_bird.cleanup();
+	my_bird2.cleanup();
+	my_bird3.cleanup();
+	my_bird4.cleanup();
 	bamboo.cleanup();
 
 	// Close OpenGL window and terminate GLFW
@@ -2130,7 +2260,7 @@ int main(void)
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode)
 {
-	static float deltaTime = 0.016f;
+	static float deltaTime = 0.075f;
 	static float pitch = 0.0f;
 	static float yaw = 0.0f;
 	const float maxPitch = 89.0f;

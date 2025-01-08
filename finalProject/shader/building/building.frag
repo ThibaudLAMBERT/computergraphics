@@ -29,7 +29,7 @@ void main()
     float cosTheta = max(dot(normal, lightDir),0);
 
 
-    vec3 ambientColor2 = 50 * vec3(0.1, 0.1, 0.1);
+    vec3 ambientColor = 50 * vec3(0.01, 0.01, 0.01);
 
     vec3 viewDir = normalize(cameraPosition - fragPos.xyz);
     vec3 reflectDir = reflect(-lightDirection, normal);
@@ -40,7 +40,7 @@ void main()
 
     vec3 diffuse = color * cosTheta * irradiance;
 
-    vec3 combinedColor = diffuse + ambientColor2;
+    vec3 combinedColor = diffuse + ambientColor;
 
     vec3 colorAfterToneMapping = combinedColor / (1 + combinedColor);
 
